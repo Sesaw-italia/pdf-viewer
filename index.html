@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Viewer PDF</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #f0f0f0;
+      text-align: center;
+    }
+
+    .topbar {
+      background: #222;
+      padding: 10px;
+    }
+
+    .topbar button {
+      margin: 5px;
+      padding: 10px 15px;
+      border: none;
+      background: #ffffff;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 90vh;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="topbar">
+  <button onclick="goToPage(1)">Pagina 1</button>
+  <button onclick="goToPage(3)">Pagina 3</button>
+  <button onclick="goToPage(5)">Pagina 5</button>
+</div>
+
+<iframe id="pdfViewer"></iframe>
+
+<script>
+  const pdfUrl = "documento.pdf";
+
+  function goToPage(page) {
+    document.getElementById("pdfViewer").src =
+      "https://mozilla.github.io/pdf.js/web/viewer.html?file=" 
+      + pdfUrl + "#page=" + page + "&zoom=page-width&toolbar=0";
+  }
+
+  // carica pagina iniziale
+  goToPage(1);
+</script>
+
+</body>
+</html>
