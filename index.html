@@ -3,30 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <title>Viewer PDF</title>
-
   <style>
     body {
       margin: 0;
       font-family: Arial;
-      background: #1e1e1e;
+      background: #f0f0f0;
+      text-align: center;
     }
 
     .topbar {
-      background: #111;
+      background: #222;
       padding: 10px;
-      display: flex;
-      overflow-x: auto;
-      white-space: nowrap;
     }
 
     .topbar button {
       margin: 5px;
-      padding: 8px 12px;
+      padding: 10px 15px;
       border: none;
       background: #ffffff;
       cursor: pointer;
-      border-radius: 20px;
-      font-size: 13px;
+      border-radius: 6px;
     }
 
     iframe {
@@ -51,21 +47,18 @@
   <button onclick="goToPage(76)">Reparti S(Mo)</button>
 </div>
 
-<iframe id="viewer"></iframe>
+<iframe id="pdfViewer"></iframe>
 
 <script>
-  //const pdfUrl = "https://raw.githubusercontent.com/Sesaw-italia/pdf-viewer/main/documento.pdf";
-const viewerBase = "pdfjs/web/viewer.html";
-  const pdfFile = "../documento.pdf";
+  const pdfUrl = "https://raw.githubusercontent.com/USERNAME/pdf-viewer/main/documento.pdf";
 
   function goToPage(page) {
-    document.getElementById("viewer").src =
-      viewerBase + "?file=" + pdfFile +
-      "#page=" + page +
-      "&zoom=page-width" +
-      "&toolbar=0";
+    document.getElementById("pdfViewer").src =
+      "https://mozilla.github.io/pdf.js/web/viewer.html?file=" 
+      + pdfUrl + "#page=" + page + "&zoom=page-width&toolbar=0";
   }
 
+  // carica pagina iniziale
   goToPage(1);
 </script>
 
