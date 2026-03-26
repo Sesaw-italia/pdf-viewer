@@ -56,14 +56,16 @@
 
 <script>
   const pdfUrl = "https://raw.githubusercontent.com/sesaw-italia/pdf-viewer/main/documento.pdf";
+  const viewerBase = "https://raw.githubusercontent.com/sesaw-italia/pdfjs/web/viewer.html";
 
   function goToPage(page) {
-    document.getElementById("pdfViewer").src =
-      "https://mozilla.github.io/pdf.js/web/viewer.html?file=" 
-      + pdfUrl + "#page=" + page + "&zoom=page-width&toolbar=0";
+    document.getElementById("viewer").src =
+      viewerBase + "?file=" + pdfFile +
+      "#page=" + page +
+      "&zoom=page-width" +
+      "&toolbar=0";
   }
 
-  // carica pagina iniziale
   goToPage(1);
 </script>
 
