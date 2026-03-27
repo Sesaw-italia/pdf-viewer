@@ -47,7 +47,7 @@
   <button onclick="goToPage(30)">Ospedali Spc</button>
   <button onclick="goToPage(32)">Reparti H (Mo)</button>
   <button onclick="goToPage(45)">Reparti H (Bo)</button>
-  <button onclick="goToPage(76)">Reparti S (Mo)</button>
+  <button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
 
 <iframe id="viewer" width="100%" height="90%"></iframe>
@@ -57,10 +57,11 @@
   const pdfFile = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 
   function goToPage(page) {
-    document.getElementById("viewer").src =
+     document.getElementById("viewer").src =
       viewerBase + "?file=" + pdfFile +
       "#page=" + page +
-      "&zoom=page-width";
+      "&zoom=page-width" +
+      "&toolbar=0";
   }
 
   goToPage(1);
