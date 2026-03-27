@@ -46,7 +46,7 @@
   <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
   <button onclick="goToPage(30)">Ospedali Spc</button>
   <button onclick="goToPage(32)">Reparti H (Mo)</button>
-  <button onclick="goToPage(45)">Reparti H (Bo)</button>
+  <button onclick="goToPage(45)">Reparti H_(Bo)</button>
   <button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
 
@@ -54,14 +54,14 @@
 
 <script>
   const viewerBase = "pdfjs/web/viewer.html";
-  const pdfFile = "../documento.pdf";
+  const pdfFile = "/pdf-viewer/documento.pdf";
 
   function goToPage(page) {
     document.getElementById("viewer").src =
       viewerBase + "?file=" + pdfFile +
       "#page=" + page +
       "&zoom=page-width";
-  }
+ }
 
   goToPage(1);
 </script>
