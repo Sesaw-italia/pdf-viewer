@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <title>Viewer PDF</title>
 
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
   <style>
     body {
       margin: 0;
@@ -28,10 +31,17 @@
       border-radius: 20px;
     }
 
-    iframe {
-      width: 100%;
+    #pdf-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
       height: 90vh;
-      border: none;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+      user-select: none;
     }
   </style>
 </head>
@@ -50,21 +60,46 @@
   <button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
 
-<iframe id="viewer" width="100%" height="90%"></iframe>
+<div id="pdf-container">
+  <canvas id="pdf"></canvas>
+</div>
 
 <script>
-  const viewerBase = "https://mozilla.github.io/pdf.js/web/viewer.html";
-  const pdfFile = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
+  const url = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 
-  function goToPage(page) {
-     document.getElementById("viewer").src =
-      viewerBase + "?file=" + pdfFile +
-      "#page=" + page +
-      "&zoom=page-width" +
-      "&toolbar=0";
+  let pdfDoc = null;
+  let currentPage = 1;
+
+  // blocca click destro (solo deterrente)
+  document.addEventListener("contextmenu", e => e.preventDefault());
+
+  function renderPage(num) {
+    pdfDoc.getPage(num).then(page => {
+      const canvas = document.getElementById("pdf");
+      const ctx = canvas.getContext("2d");
+
+      const viewport = page.getViewport({ scale: 1.5 });
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      page.render({
+        canvasContext: ctx,
+        viewport: viewport
+      });
+    });
   }
 
-  goToPage(1);
+  function goToPage(page) {
+    currentPage = page;
+    renderPage(page);
+  }
+
+  // carica PDF
+  pdfjsLib.getDocument(url).promise.then(pdf => {
+    pdfDoc = pdf;
+    renderPage(1);
+  });
 </script>
 
 </body>
