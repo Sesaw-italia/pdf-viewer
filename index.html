@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Viewer PDF</title>
 
-  <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
@@ -18,17 +17,25 @@
       background: #222;
       padding: 10px;
       display: flex;
-      overflow-x: auto;
-      white-space: nowrap;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .topbar button, .topbar input {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 20px;
     }
 
     .topbar button {
-      margin: 5px;
-      padding: 8px 12px;
-      border: none;
       background: #ffffff;
       cursor: pointer;
-      border-radius: 20px;
+    }
+
+    .section {
+      display: flex;
+      gap: 5px;
+      align-items: center;
     }
 
     #pdf-container {
@@ -40,7 +47,6 @@
 
     canvas {
       max-width: 100%;
-      height: auto;
       user-select: none;
     }
   </style>
@@ -49,15 +55,39 @@
 <body>
 
 <div class="topbar">
-  <button onclick="goToPage(1)">Inizio</button>
-  <button onclick="goToPage(6)">Elisuperficie</button>
-  <button onclick="goToPage(13)">Autostrada A1</button>
-  <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-  <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
-  <button onclick="goToPage(30)">Ospedali Spc</button>
-  <button onclick="goToPage(32)">Reparti H (Mo)</button>
-  <button onclick="goToPage(45)">Reparti H (Bo)</button>
-  <button onclick="goToPage(76)">Reparti S (Mo)</button>
+
+  <!-- 🔵 I TUOI PULSANTI -->
+  <div class="section">
+    <button onclick="goToPage(1)">Inizio</button>
+    <button onclick="goToPage(6)">Elisuperficie</button>
+    <button onclick="goToPage(13)">Autostrada A1</button>
+    <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
+    <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
+    <button onclick="goToPage(30)">Ospedali Spc</button>
+    <button onclick="goToPage(32)">Reparti H (Mo)</button>
+    <button onclick="goToPage(45)">Reparti H (Bo)</button>
+    <button onclick="goToPage(76)">Reparti S_(Mo)</button>
+  </div>
+
+  <!-- 📄 MENU PAGINA -->
+  <div class="section">
+    <input type="number" id="pageInput" placeholder="Pagina">
+    <button onclick="goToInputPage()">Vai</button>
+  </div>
+
+  <!-- 🔍 CERCA -->
+  <div class="section">
+    <input type="text" id="searchText" placeholder="Cerca...">
+    <button onclick="searchText()">Cerca</button>
+  </div>
+
+  <!-- ⚙️ OPZIONI -->
+  <div class="section">
+    <button onclick="zoomIn()">Zoom +</button>
+    <button onclick="zoomOut()">Zoom -</button>
+    <button onclick="toggleTheme()">Tema</button>
+  </div>
+
 </div>
 
 <div id="pdf-container">
@@ -69,8 +99,8 @@
 
   let pdfDoc = null;
   let currentPage = 1;
+  let scale = 1.5;
 
-  // blocca click destro (solo deterrente)
   document.addEventListener("contextmenu", e => e.preventDefault());
 
   function renderPage(num) {
@@ -78,7 +108,7 @@
       const canvas = document.getElementById("pdf");
       const ctx = canvas.getContext("2d");
 
-      const viewport = page.getViewport({ scale: 1.5 });
+      const viewport = page.getViewport({ scale: scale });
 
       canvas.height = viewport.height;
       canvas.width = viewport.width;
@@ -91,11 +121,60 @@
   }
 
   function goToPage(page) {
+    if (!pdfDoc) return;
+    if (page < 1 || page > pdfDoc.numPages) return;
     currentPage = page;
     renderPage(page);
   }
 
-  // carica PDF
+  function goToInputPage() {
+    const page = parseInt(document.getElementById("pageInput").value);
+    goToPage(page);
+  }
+
+  // 🔍 CERCA TESTO
+  async function searchText() {
+    const text = document.getElementById("searchText").value.toLowerCase();
+
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i);
+      const content = await page.getTextContent();
+
+      const strings = content.items.map(item => item.str.toLowerCase());
+
+      if (strings.join(" ").includes(text)) {
+        goToPage(i);
+        alert("Trovato a pagina " + i);
+        return;
+      }
+    }
+
+    alert("Testo non trovato");
+  }
+
+  // 🔎 ZOOM
+  function zoomIn() {
+    scale += 0.3;
+    renderPage(currentPage);
+  }
+
+  function zoomOut() {
+    scale -= 0.3;
+    if (scale < 0.5) scale = 0.5;
+    renderPage(currentPage);
+  }
+
+  // 🎨 TEMA
+  function toggleTheme() {
+    const body = document.body;
+    if (body.style.background === "black") {
+      body.style.background = "#f0f0f0";
+    } else {
+      body.style.background = "black";
+    }
+  }
+
+  // LOAD PDF
   pdfjsLib.getDocument(url).promise.then(pdf => {
     pdfDoc = pdf;
     renderPage(1);
