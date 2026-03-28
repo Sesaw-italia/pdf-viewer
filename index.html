@@ -10,34 +10,51 @@
     body {
       margin: 0;
       font-family: Arial;
-      background: #f0f0f0;
+      background: #eef1f5;
     }
 
+    /* 🔵 BARRA PRINCIPALE */
     .topbar {
-      background: #222;
+      background: #1e1e2f;
       padding: 10px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .topbar button, .topbar input {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 20px;
-    }
-
-    .topbar button {
-      background: #ffffff;
-      cursor: pointer;
-    }
-
-    .section {
+    /* 🔹 RIGA */
+    .row {
       display: flex;
-      gap: 5px;
+      gap: 8px;
+      flex-wrap: wrap;
       align-items: center;
     }
 
+    /* 🔵 TUOI PULSANTI */
+    .primary button {
+      background: #4a90e2;
+      color: white;
+      font-weight: bold;
+    }
+
+    /* ⚙️ CONTROLLI */
+    .secondary button {
+      background: #ffffff;
+    }
+
+    button, input {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    input {
+      outline: none;
+    }
+
+    /* 📄 PDF */
     #pdf-container {
       display: flex;
       justify-content: center;
@@ -48,6 +65,27 @@
     canvas {
       max-width: 100%;
       user-select: none;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+
+    /* ⚙️ MENU */
+    .menu {
+      position: absolute;
+      top: 90px;
+      right: 20px;
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .menu button {
+      width: 100%;
+      text-align: left;
     }
   </style>
 </head>
@@ -56,8 +94,8 @@
 
 <div class="topbar">
 
-  <!-- 🔵 I TUOI PULSANTI -->
-  <div class="section">
+  <!-- 🔵 RIGA 1: I TUOI -->
+  <div class="row primary">
     <button onclick="goToPage(1)">Inizio</button>
     <button onclick="goToPage(6)">Elisuperficie</button>
     <button onclick="goToPage(13)">Autostrada A1</button>
@@ -69,25 +107,33 @@
     <button onclick="goToPage(76)">Reparti S_(Mo)</button>
   </div>
 
-  <!-- 📄 MENU PAGINA -->
-  <div class="section">
+  <!-- ⚙️ RIGA 2: CONTROLLI -->
+  <div class="row secondary">
+
+    <!-- PAGINA -->
     <input type="number" id="pageInput" placeholder="Pagina">
     <button onclick="goToInputPage()">Vai</button>
-  </div>
 
-  <!-- 🔍 CERCA -->
-  <div class="section">
+    <!-- CERCA -->
     <input type="text" id="searchText" placeholder="Cerca...">
     <button onclick="searchText()">Cerca</button>
+
+    <!-- ZOOM -->
+    <button onclick="zoomIn()">＋</button>
+    <button onclick="zoomOut()">－</button>
+
+    <!-- MENU -->
+    <button onclick="toggleMenu()">⚙️ Opzioni</button>
+
   </div>
 
-  <!-- ⚙️ OPZIONI -->
-  <div class="section">
-    <button onclick="zoomIn()">Zoom +</button>
-    <button onclick="zoomOut()">Zoom -</button>
-    <button onclick="toggleTheme()">Tema</button>
-  </div>
+</div>
 
+<!-- MENU OPZIONI -->
+<div id="menu" class="menu">
+  <button onclick="rotate(90)">Ruota ➡️</button>
+  <button onclick="rotate(-90)">Ruota ⬅️</button>
+  <button onclick="resetView()">Reset vista</button>
 </div>
 
 <div id="pdf-container">
@@ -100,6 +146,7 @@
   let pdfDoc = null;
   let currentPage = 1;
   let scale = 1.5;
+  let rotation = 0;
 
   document.addEventListener("contextmenu", e => e.preventDefault());
 
@@ -108,7 +155,10 @@
       const canvas = document.getElementById("pdf");
       const ctx = canvas.getContext("2d");
 
-      const viewport = page.getViewport({ scale: scale });
+      const viewport = page.getViewport({
+        scale: scale,
+        rotation: rotation
+      });
 
       canvas.height = viewport.height;
       canvas.width = viewport.width;
@@ -132,7 +182,7 @@
     goToPage(page);
   }
 
-  // 🔍 CERCA TESTO
+  // 🔍 CERCA
   async function searchText() {
     const text = document.getElementById("searchText").value.toLowerCase();
 
@@ -149,7 +199,7 @@
       }
     }
 
-    alert("Testo non trovato");
+    alert("Non trovato");
   }
 
   // 🔎 ZOOM
@@ -164,14 +214,22 @@
     renderPage(currentPage);
   }
 
-  // 🎨 TEMA
-  function toggleTheme() {
-    const body = document.body;
-    if (body.style.background === "black") {
-      body.style.background = "#f0f0f0";
-    } else {
-      body.style.background = "black";
-    }
+  // 🔄 ROTAZIONE
+  function rotate(deg) {
+    rotation += deg;
+    renderPage(currentPage);
+  }
+
+  function resetView() {
+    scale = 1.5;
+    rotation = 0;
+    renderPage(currentPage);
+  }
+
+  // ⚙️ MENU
+  function toggleMenu() {
+    const menu = document.getElementById("menu");
+    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
   }
 
   // LOAD PDF
