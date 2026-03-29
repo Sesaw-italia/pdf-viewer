@@ -46,7 +46,7 @@ canvas { display:block; max-width:100%; }
 <button onclick="goToPage(30)">Ospedali Spc</button>
 <button onclick="goToPage(32)">Reparti H (Mo)</button>
 <button onclick="goToPage(45)">Reparti H (Bo)</button>
-<button onclick="goToPage(76)">Reparti S (Mo)</button>
+<button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
 
 <div class="row secondary">
@@ -80,65 +80,89 @@ async function renderPage(num){
   const page = await pdfDoc.getPage(num);
   const container = document.getElementById("pdf-page");
   container.innerHTML = "";
-  container.style.position="relative";
+  container.style.position = "relative";
 
   const canvas = document.createElement("canvas");
   container.appendChild(canvas);
   const ctx = canvas.getContext("2d");
-  const viewport = page.getViewport({scale});
+
+  const viewport = page.getViewport({ scale });
   canvas.width = viewport.width;
   canvas.height = viewport.height;
 
-  await page.render({canvasContext:ctx,viewport}).promise;
+  await page.render({ canvasContext: ctx, viewport }).promise;
 
-  // ===== LINK LAYER EVIDENZIATO =====
-  const annotations = await page.getAnnotations();
+  // ===== LAYER LINK =====
   const linkLayer = document.createElement("div");
-  linkLayer.style.position="absolute";
+  linkLayer.style.position = "absolute";
   linkLayer.style.top = 0;
   linkLayer.style.left = 0;
-  linkLayer.style.width = viewport.width+"px";
-  linkLayer.style.height = viewport.height+"px";
+  linkLayer.style.width = viewport.width + "px";
+  linkLayer.style.height = viewport.height + "px";
   linkLayer.style.zIndex = 20;
   container.appendChild(linkLayer);
 
-  for(const annotation of annotations){
-    if(annotation.subtype!=="Link") continue;
-    const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
-    const [x1,y1,x2,y2] = viewport.convertToViewportRectangle(rect);
-    const left=Math.min(x1,x2), top=Math.min(y1,y2);
-    const width=Math.abs(x2-x1), height=Math.abs(y2-y1);
+  const annotations = await page.getAnnotations();
 
-    const link=document.createElement("a");
-    link.style.left=left+"px";
-    link.style.top=top+"px";
-    link.style.width=width+"px";
-    link.style.height=height+"px";
-    link.style.position="absolute";
-    link.style.cursor="pointer";
-    link.style.background="rgba(255,255,0,0.3)"; // evidenzia in giallo
+  for (const annotation of annotations) {
+    if (annotation.subtype !== "Link") continue;
 
-    if(annotation.url){
+    const rect = annotation.rect;
+
+    // Trasformazione coordinate PDF -> Canvas (STESSO METODO DEL TESTO)
+    const transform = pdfjsLib.Util.transform(
+      viewport.transform,
+      [1, 0, 0, 1, rect[0], rect[1]]
+    );
+
+    const transform2 = pdfjsLib.Util.transform(
+      viewport.transform,
+      [1, 0, 0, 1, rect[2], rect[3]]
+    );
+
+    const left = transform[4];
+    const top = transform2[5] + 2; // oppure -2
+    const width = transform2[4] - transform[4];
+    const height = transform[5] - transform2[5];
+
+    const link = document.createElement("a");
+    link.style.position = "absolute";
+    link.style.left = left + "px";
+    link.style.top = top + "px";
+    link.style.width = width + "px";
+    link.style.height = height + "px";
+    link.style.background = "rgba(255,255,0,0.25)"; // evidenzia link
+    link.style.cursor = "pointer";
+
+    // Link esterno
+    if (annotation.url) {
       link.href = annotation.url;
-      link.target="_blank";
-    } else if(annotation.dest){
-      link.href="#";
-      link.onclick = async e => {
+      link.target = "_blank";
+    }
+    // Link interno
+    else if (annotation.dest) {
+      link.href = "#";
+      link.onclick = async (e) => {
         e.preventDefault();
         let dest = annotation.dest;
-        if(typeof dest === "string") dest = await pdfDoc.getDestination(dest);
-        if(Array.isArray(dest)){
+        if (typeof dest === "string") {
+          dest = await pdfDoc.getDestination(dest);
+        }
+        if (Array.isArray(dest)) {
           const pageRef = dest[0];
           const pageIndex = await pdfDoc.getPageIndex(pageRef);
-          goToPage(pageIndex+1);
+          goToPage(pageIndex + 1);
         }
       };
     }
+
     linkLayer.appendChild(link);
   }
 
-  highlight(page,viewport);
-  document.getElementById("resultInfo").innerText=`Pagina ${currentPage} / ${pdfDoc.numPages}`;
+  highlight(page, viewport);
+
+  document.getElementById("resultInfo").innerText =
+    `Pagina ${currentPage} / ${pdfDoc.numPages}`;
 }
 
 // PAGINE
