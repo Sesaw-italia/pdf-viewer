@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>PDF Viewer Test Link</title>
+<title>PDF Viewer Test Link + Pagine</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
@@ -15,22 +15,30 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 <style>
 body { margin:0; font-family:Arial; background:#eef1f5; display:flex; flex-direction:column; align-items:center; }
+#controls { margin:10px; }
+button { padding:6px 12px; margin:0 5px; border-radius:5px; border:none; cursor:pointer; }
 #pdf-container { flex:1; width:95%; max-width:1200px; height:85vh; background:white; border-radius:10px; overflow:auto; display:flex; justify-content:center; align-items:center; }
 #pdf-page { position: relative; line-height:0; font-size:0; }
 #pdf-page a { display:block; position:absolute; cursor:pointer; }
-/* riquadri debug link */
 .link-debug { background: rgba(255,0,0,0.3); }
 </style>
 </head>
 
 <body>
+
+<div id="controls">
+  <button onclick="prevPage()">⬅ Pagina</button>
+  <button onclick="nextPage()">Pagina ➡</button>
+  <span id="pageInfo"></span>
+</div>
+
 <div id="pdf-container">
   <div id="pdf-page"></div>
 </div>
 
 <script>
 const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
-let pdfDoc=null, currentPage=1, scale=1.5, rotation=0;
+let pdfDoc=null, currentPage=1, scale=1.5;
 
 async function renderPage(num){
   const page = await pdfDoc.getPage(num);
@@ -41,7 +49,7 @@ async function renderPage(num){
   const canvas = document.createElement("canvas");
   container.appendChild(canvas);
   const ctx = canvas.getContext("2d");
-  const viewport = page.getViewport({ scale, rotation });
+  const viewport = page.getViewport({ scale });
   canvas.width = viewport.width;
   canvas.height = viewport.height;
 
@@ -60,14 +68,10 @@ async function renderPage(num){
 
   for (const annotation of annotations) {
     if (annotation.subtype !== "Link") continue;
-
     const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
     const [x1, y1, x2, y2] = viewport.convertToViewportRectangle(rect);
-
-    const left = Math.min(x1,x2);
-    const top = Math.min(y1,y2);
-    const width = Math.abs(x2-x1);
-    const height = Math.abs(y2-y1);
+    const left = Math.min(x1,x2), top = Math.min(y1,y2);
+    const width = Math.abs(x2-x1), height = Math.abs(y2-y1);
 
     const link = document.createElement("a");
     link.style.left = left + "px";
@@ -87,6 +91,8 @@ async function renderPage(num){
 
     linkLayer.appendChild(link);
   }
+
+  document.getElementById("pageInfo").innerText = `Pagina ${currentPage} / ${pdfDoc.numPages}`;
 }
 
 // ==== PAGINA PRECEDENTE/SUCCESSIVA
@@ -96,7 +102,7 @@ function prevPage(){ if(currentPage > 1){ currentPage--; renderPage(currentPage)
 // ==== LOAD PDF
 pdfjsLib.getDocument(url).promise.then(pdf=>{
   pdfDoc = pdf;
-  renderPage(1);
+  renderPage(currentPage);
 });
 </script>
 </body>
