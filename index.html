@@ -197,7 +197,7 @@ async function renderPage(num){
 
   await page.render({canvasContext:ctx,viewport}).promise;
 
-  // ===== LINK LAYER =====
+  // ===== LINK LAYER PULITO =====
   const annotations=await page.getAnnotations();
   const linkLayer=document.createElement("div");
   linkLayer.style.position="absolute";
@@ -210,6 +210,7 @@ async function renderPage(num){
 
   for(const annotation of annotations){
     if(annotation.subtype!=="Link") continue;
+
     const rect=pdfjsLib.Util.normalizeRect(annotation.rect);
     const [x1,y1,x2,y2]=viewport.convertToViewportRectangle(rect);
     const left=Math.min(x1,x2), top=Math.min(y1,y2);
@@ -222,10 +223,28 @@ async function renderPage(num){
     link.style.height=height+"px";
     link.style.position="absolute";
     link.style.cursor="pointer";
+    link.style.display="block";
+    link.style.background="transparent"; // NIENTE ROSSO
 
+    // LINK ESTERNO
     if(annotation.url){
       link.href=annotation.url;
       link.target="_blank";
+    }
+
+    // LINK INTERNO PDF
+    else if(annotation.dest){
+      link.href="#";
+      link.onclick = async (e) => {
+        e.preventDefault();
+        let dest = annotation.dest;
+        if(typeof dest === "string") dest = await pdfDoc.getDestination(dest);
+        if(Array.isArray(dest)){
+          const pageRef = dest[0];
+          const pageIndex = await pdfDoc.getPageIndex(pageRef);
+          goToPage(pageIndex+1);
+        }
+      };
     }
 
     linkLayer.appendChild(link);
