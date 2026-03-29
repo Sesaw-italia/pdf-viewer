@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>1PDF Viewer PRO</title>
+<title>2PDF Viewer PRO</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
@@ -119,6 +119,21 @@ canvas {
 
 <!-- CONTROLLI -->
 <div id="controls">
+<div id="searchBox" style="margin:10px;">
+  <input type="text" id="searchText" placeholder="Cerca parola...">
+  <button onclick="searchText()">Cerca</button>
+</div>
+
+<div id="results" style="
+  max-width:1200px;
+  width:95%;
+  background:white;
+  border-radius:10px;
+  padding:10px;
+  max-height:150px;
+  overflow:auto;
+  margin-bottom:10px;
+"></div>
   <button onclick="prevPage()">⬅ Pagina</button>
   <button onclick="nextPage()">Pagina ➡</button>
   <span id="pageInfo"></span>
@@ -135,6 +150,8 @@ const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 let pdfDoc=null;
 let currentPage=1;
 let scale=1.5;
+let results = [];
+let searchTerm = "";
 
 /* RENDER */
 async function renderPage(num){
@@ -206,6 +223,7 @@ linkLayer.appendChild(link);
 /* info pagina */
 document.getElementById("pageInfo").innerText =
 `Pagina ${currentPage} / ${pdfDoc.numPages}`;
+highlight(page, viewport);
 }
 
 /* NAVIGAZIONE */
@@ -234,6 +252,88 @@ renderPage(currentPage);
 pdfjsLib.getDocument(url).promise.then(pdf=>{
 pdfDoc=pdf;
 renderPage(1);
+});
+async function searchText(){
+  searchTerm = document.getElementById("searchText").value.toLowerCase();
+  results = [];
+
+  if(!searchTerm) return;
+
+  for(let i=1;i<=pdfDoc.numPages;i++){
+    const page = await pdfDoc.getPage(i);
+    const text = await page.getTextContent();
+    const str = text.items.map(t=>t.str).join(" ").toLowerCase();
+
+    if(str.includes(searchTerm)){
+      results.push(i);
+    }
+  }
+
+  showResults();
+}
+function showResults(){
+  const box = document.getElementById("results");
+  box.innerHTML = "";
+
+  if(results.length === 0){
+    box.innerHTML = "Nessun risultato";
+    return;
+  }
+
+  results.forEach(p=>{
+    const div = document.createElement("div");
+    div.innerText = "Pagina " + p;
+    div.style.cursor = "pointer";
+    div.style.padding = "5px";
+
+    div.onclick = ()=> goToPage(p);
+
+    box.appendChild(div);
+  });
+}
+function highlight(page, viewport){
+  if(!searchTerm) return;
+
+  page.getTextContent().then(textContent=>{
+    const ctx = document.querySelector("canvas").getContext("2d");
+
+    textContent.items.forEach(item=>{
+      if(item.str.toLowerCase().includes(searchTerm)){
+        const tx = pdfjsLib.Util.transform(viewport.transform,item.transform);
+        ctx.fillStyle="rgba(255,255,0,0.3)";
+        ctx.fillRect(tx[4], tx[5]-10, item.width*1.5, 15);
+      }
+    });
+  });
+}
+// SCROLL MOUSE
+let scrollLock = false;
+
+document.getElementById("pdf-container").addEventListener("wheel", e=>{
+  e.preventDefault();
+
+  if(scrollLock) return;
+
+  if(e.deltaY > 0) nextPage();
+  else prevPage();
+
+  scrollLock = true;
+  setTimeout(()=>scrollLock=false, 400);
+}, { passive:false });
+
+
+// SWIPE MOBILE
+let startY = 0;
+
+document.getElementById("pdf-container").addEventListener("touchstart", e=>{
+  startY = e.touches[0].clientY;
+});
+
+document.getElementById("pdf-container").addEventListener("touchend", e=>{
+  let endY = e.changedTouches[0].clientY;
+
+  if(startY - endY > 50) nextPage();
+  if(endY - startY > 50) prevPage();
 });
 </script>
 
