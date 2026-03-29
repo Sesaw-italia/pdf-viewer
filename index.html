@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <title>Viewer PDF PRO</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
+</script>
 
 <style>
 body {
@@ -189,21 +192,18 @@ canvas.width=viewport.width;
 page.render({canvasContext:ctx,viewport}).promise.then(()=>{
 
 /* ✅ LINK CLICCABILI */
-page.getAnnotations().then(annotations=>{
-const layer=document.createElement("div");
-layer.className="annotationLayer";
-layer.style.width=canvas.width+"px";
-layer.style.height=canvas.height+"px";
+const annotationLayerDiv = document.createElement("div");
+annotationLayerDiv.className = "annotationLayer";
+container.appendChild(annotationLayerDiv);
 
-container.appendChild(layer);
+const annotationLayer = new pdfjsViewer.AnnotationLayerBuilder({
+  pageDiv: container,
+  pdfPage: page,
+  viewport: viewport,
+  linkService: new pdfjsViewer.SimpleLinkService(),
+});
 
-pdfjsLib.AnnotationLayer.render({
-viewport:viewport.clone({dontFlip:true}),
-div:layer,
-annotations:annotations,
-page:page
-});
-});
+annotationLayer.render(viewport);
 
 highlight(page,viewport);
 
