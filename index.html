@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>PDF Viewer PRO</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background: #eef1f5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.topbar {
+  background: #1e1e2f;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 95%;
+  max-width: 1200px;
+  border-radius: 15px;
+  margin-top: 10px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.primary button {
+  background: #4a90e2;
+  color: white;
+  font-weight: bold;
+}
+
+.secondary button {
+  background: white;
+  color: black;
+}
+
+button, input {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+iframe {
+  width: 95%;
+  max-width: 1200px;
+  height: 85vh;
+  border: none;
+  margin-top: 10px;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+
+  <div class="row primary">
+    <button onclick="goToPage(1)">Inizio</button>
+    <button onclick="goToPage(6)">Elisuperficie</button>
+    <button onclick="goToPage(13)">Autostrada A1</button>
+    <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
+    <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
+    <button onclick="goToPage(30)">Ospedali Spc</button>
+    <button onclick="goToPage(32)">Reparti H (Mo)</button>
+    <button onclick="goToPage(45)">Reparti H (Bo)</button>
+    <button onclick="goToPage(76)">Reparti S (Mo)</button>
+  </div>
+
+  <div class="row secondary">
+    <button onclick="prevPage()">⬅️ Pagina</button>
+    <button onclick="nextPage()">➡️ Pagina</button>
+
+    <input type="text" id="searchText" placeholder="Cerca...">
+    <button onclick="searchText()">Cerca</button>
+
+    <input type="number" id="gotoPageNum" placeholder="Vai a pagina" style="width: 100px;">
+    <button onclick="goToInputPage()">Vai</button>
+
+    <button onclick="zoomIn()">＋</button>
+    <button onclick="zoomOut()">－</button>
+
+    <button onclick="rotateRight()">↻</button>
+    <button onclick="rotateLeft()">↺</button>
+  </div>
+
+</div>
+
+<iframe id="viewer"></iframe>
+
+<script>
+const viewerBase = "https://mozilla.github.io/pdf.js/web/viewer.html";
+const pdfFile = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
+
+let currentPage = 1;
+let zoom = "page-width";
+let rotation = 0;
+
+// Imposta src iframe con pagina, zoom e rotazione
+function updateViewer() {
+  let url = `${viewerBase}?file=${encodeURIComponent(pdfFile)}#page=${currentPage}&zoom=${zoom}&toolbar=0`;
+  if (rotation !== 0) {
+    url += `&rotation=${rotation}`;
+  }
+  document.getElementById("viewer").src = url;
+}
+
+// Navigazione pagine
+function goToPage(p) { currentPage = p; updateViewer(); }
+function nextPage() { currentPage++; updateViewer(); }
+function prevPage() { if(currentPage>1){currentPage--; updateViewer();} }
+function goToInputPage() {
+  const input = parseInt(document.getElementById("gotoPageNum").value);
+  if (!isNaN(input)) goToPage(input);
+}
+
+// Zoom
+function zoomIn() { zoom = "page-width"; updateViewer(); } // puoi cambiare per scale precisi
+function zoomOut() { zoom = "page-fit"; updateViewer(); }
+
+// Rotazione
+function rotateRight() { rotation = (rotation + 90) % 360; updateViewer(); }
+function rotateLeft() { rotation = (rotation + 270) % 360; updateViewer(); }
+
+// Cerca testo (usa la funzione search interna del viewer)
+function searchText() {
+  const term = document.getElementById("searchText").value.trim();
+  if (!term) return;
+  const iframe = document.getElementById("viewer");
+  iframe.contentWindow.PDFViewerApplication?.findController.executeCommand("find", {query: term});
+}
+
+// Carica la pagina iniziale
+updateViewer();
+</script>
+
+</body>
+</html>
