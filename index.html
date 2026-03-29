@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>2PDF Viewer Test Link + Pagine</title>
+<title>3PDF Viewer Test Link + Pagine</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
@@ -80,7 +80,6 @@ button { padding:6px 12px; margin:0 5px; border-radius:5px; border:none; cursor:
 <script>
 const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 let pdfDoc=null, currentPage=1, scale=1.5;
-
 async function renderPage(num){
   const page = await pdfDoc.getPage(num);
   const container = document.getElementById("pdf-page");
@@ -145,14 +144,17 @@ pdfjsLib.getDocument(url).promise.then(pdf=>{
   pdfDoc = pdf;
   renderPage(currentPage);
 });
-  
-function goToPage(page) {
+const viewerBase = "https://mozilla.github.io/pdf.js/web/viewer.html";
+  const pdfFile = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
+
+  function goToPage(page) {
      document.getElementById("viewer").src =
       viewerBase + "?file=" + pdfFile +
       "#page=" + page +
       "&zoom=page-width" +
       "&toolbar=0";
-}
+  }
+  goToPage(1);
 </script>
 </body>
 </html>
