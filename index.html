@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>2PDF Viewer PRO</title>
+<title>3PDF Viewer PRO</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
@@ -99,6 +99,52 @@ canvas {
 .linkLayer a:hover {
   background:rgba(0, 150, 255, 0.2);
 }
+/* SIDEBAR */
+.sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 250px;
+  height: 100%;
+  background: white;
+  border-radius: 10px 0 0 10px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  display: none;
+  flex-direction: column;
+  z-index: 2000;
+}
+
+.sidebar-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px;
+  background:#4a90e2;
+  color:white;
+  border-radius:10px 0 0 0;
+}
+
+.sidebar-header button {
+  background:none;
+  color:white;
+  font-size:16px;
+}
+
+#results {
+  overflow:auto;
+  padding:10px;
+  flex:1;
+}
+
+.result-item {
+  padding:6px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.result-item:hover {
+  background:#eee;
+}
 </style>
 </head>
 
@@ -124,24 +170,12 @@ canvas {
   <button onclick="searchText()">Cerca</button>
 </div>
 
-<div id="results" style="
-  max-width:1200px;
-  width:95%;
-  background:white;
-  border-radius:10px;
-  padding:10px;
-  max-height:150px;
-  overflow:auto;
-  margin-bottom:10px;
-"></div>
-  <button onclick="prevPage()">⬅ Pagina</button>
-  <button onclick="nextPage()">Pagina ➡</button>
-  <span id="pageInfo"></span>
-</div>
-
-<!-- PDF -->
-<div id="pdf-container">
-  <div id="pdf-page"></div>
+<div id="sidebar" class="sidebar">
+  <div class="sidebar-header">
+    <span>Risultati ricerca</span>
+    <button onclick="closeSidebar()">✖</button>
+  </div>
+  <div id="results"></div>
 </div>
 
 <script>
@@ -273,23 +307,27 @@ async function searchText(){
 }
 function showResults(){
   const box = document.getElementById("results");
+  const sidebar = document.getElementById("sidebar");
+
   box.innerHTML = "";
 
   if(results.length === 0){
     box.innerHTML = "Nessun risultato";
-    return;
+  } else {
+    results.forEach(p=>{
+      const div = document.createElement("div");
+      div.className = "result-item";
+      div.innerText = "Pagina " + p;
+
+      div.onclick = ()=>{
+        goToPage(p);
+      };
+
+      box.appendChild(div);
+    });
   }
 
-  results.forEach(p=>{
-    const div = document.createElement("div");
-    div.innerText = "Pagina " + p;
-    div.style.cursor = "pointer";
-    div.style.padding = "5px";
-
-    div.onclick = ()=> goToPage(p);
-
-    box.appendChild(div);
-  });
+  sidebar.style.display = "flex";
 }
 function highlight(page, viewport){
   if(!searchTerm) return;
@@ -335,6 +373,9 @@ document.getElementById("pdf-container").addEventListener("touchend", e=>{
   if(startY - endY > 50) nextPage();
   if(endY - startY > 50) prevPage();
 });
+function closeSidebar(){
+  document.getElementById("sidebar").style.display = "none";
+}
 </script>
 
 </body>
