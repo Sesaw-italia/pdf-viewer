@@ -1,242 +1,249 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <title>Viewer PDF</title>
+<meta charset="UTF-8">
+<title>Viewer PDF PRO</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: #eef1f5;
-    }
+<style>
+body { margin:0; font-family:Arial; background:#eef1f5; }
 
-    /* 🔵 BARRA PRINCIPALE */
-    .topbar {
-      background: #1e1e2f;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+.topbar {
+  background:#1e1e2f;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
 
-    /* 🔹 RIGA */
-    .row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
+.row { display:flex; gap:8px; flex-wrap:wrap; }
 
-    /* 🔵 TUOI PULSANTI */
-    .primary button {
-      background: #4a90e2;
-      color: white;
-      font-weight: bold;
-    }
+.primary button {
+  background:#4a90e2;
+  color:white;
+  font-weight:bold;
+}
 
-    /* ⚙️ CONTROLLI */
-    .secondary button {
-      background: #ffffff;
-    }
+.secondary button { background:white; }
 
-    button, input {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 14px;
-    }
+button,input {
+  padding:6px 12px;
+  border:none;
+  border-radius:20px;
+}
 
-    input {
-      outline: none;
-    }
+#layout {
+  display:flex;
+  height:90vh;
+}
 
-    /* 📄 PDF */
-    #pdf-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 90vh;
-    }
+#sidebar {
+  width:220px;
+  background:#fff;
+  overflow:auto;
+  border-right:1px solid #ddd;
+  padding:10px;
+}
 
-    canvas {
-      max-width: 100%;
-      user-select: none;
-      border-radius: 10px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    }
+.result {
+  padding:6px;
+  cursor:pointer;
+  border-radius:8px;
+}
 
-    /* ⚙️ MENU */
-    .menu {
-      position: absolute;
-      top: 90px;
-      right: 20px;
-      background: white;
-      border-radius: 10px;
-      padding: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      display: none;
-      flex-direction: column;
-      gap: 5px;
-    }
+.result:hover { background:#eee; }
 
-    .menu button {
-      width: 100%;
-      text-align: left;
-    }
-  </style>
+#pdf-container {
+  flex:1;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+canvas {
+  max-width:100%;
+  box-shadow:0 5px 20px rgba(0,0,0,0.2);
+}
+
+.menu {
+  position:absolute;
+  top:90px;
+  right:20px;
+  background:white;
+  border-radius:10px;
+  padding:10px;
+  display:none;
+}
+</style>
 </head>
 
 <body>
 
 <div class="topbar">
 
-  <!-- 🔵 RIGA 1: I TUOI -->
-  <div class="row primary">
-    <button onclick="goToPage(1)">Inizio</button>
-    <button onclick="goToPage(6)">Elisuperficie</button>
-    <button onclick="goToPage(13)">Autostrada A1</button>
-    <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-    <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
-    <button onclick="goToPage(30)">Ospedali Spc</button>
-    <button onclick="goToPage(32)">Reparti H (Mo)</button>
-    <button onclick="goToPage(45)">Reparti H (Bo)</button>
-    <button onclick="goToPage(76)">Reparti S (Mo)</button>
-  </div>
+<div class="row primary">
+<button onclick="goToPage(1)">Inizio</button>
+  <button onclick="goToPage(6)">Elisuperficie</button>
+  <button onclick="goToPage(13)">Autostrada A1</button>
+  <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
+  <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
+  <button onclick="goToPage(30)">Ospedali Spc</button>
+  <button onclick="goToPage(32)">Reparti H_(Mo)</button>
+  <button onclick="goToPage(45)">Reparti H (Bo)</button>
+  <button onclick="goToPage(76)">Reparti S (Mo)</button>
+</div>
 
-  <!-- ⚙️ RIGA 2: CONTROLLI -->
-  <div class="row secondary">
+<div class="row secondary">
 
-    <!-- PAGINA -->
-    <input type="number" id="pageInput" placeholder="Pagina">
-    <button onclick="goToInputPage()">Vai</button>
+<input type="text" id="searchText" placeholder="Cerca...">
+<button onclick="searchText()">Cerca</button>
 
-    <!-- CERCA -->
-    <input type="text" id="searchText" placeholder="Cerca...">
-    <button onclick="searchText()">🔍</button>
+<button onclick="prevResult()">⬅</button>
+<button onclick="nextResult()">➡</button>
 
-    <!-- ZOOM -->
-    <button onclick="zoomIn()">＋</button>
-    <button onclick="zoomOut()">－</button>
+<span id="resultInfo"></span>
 
-    <!-- MENU -->
-    <button onclick="toggleMenu()">⚙️ Opzioni</button>
+<button onclick="zoomIn()">＋</button>
+<button onclick="zoomOut()">－</button>
 
-  </div>
+<button onclick="toggleMenu()">⚙️</button>
 
 </div>
 
-<!-- MENU OPZIONI -->
+</div>
+
 <div id="menu" class="menu">
-  <button onclick="rotate(90)">Ruota ➡️</button>
-  <button onclick="rotate(-90)">Ruota ⬅️</button>
-  <button onclick="resetView()">Reset vista</button>
+<button onclick="rotate(90)">Ruota ➡️</button>
+<button onclick="rotate(-90)">Ruota ⬅️</button>
+<button onclick="resetView()">Reset</button>
 </div>
 
+<div id="layout">
+<div id="sidebar"></div>
 <div id="pdf-container">
-  <canvas id="pdf"></canvas>
+<canvas id="pdf"></canvas>
+</div>
 </div>
 
 <script>
-  const url = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
+const url = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 
-  let pdfDoc = null;
-  let currentPage = 1;
-  let scale = 1.5;
-  let rotation = 0;
+let pdfDoc=null, currentPage=1, scale=1.5, rotation=0;
 
-  document.addEventListener("contextmenu", e => e.preventDefault());
+let results=[];
+let currentIndex=0;
+let searchTerm="";
 
-  function renderPage(num) {
-    pdfDoc.getPage(num).then(page => {
-      const canvas = document.getElementById("pdf");
-      const ctx = canvas.getContext("2d");
+function renderPage(num){
+pdfDoc.getPage(num).then(page=>{
+const canvas=document.getElementById("pdf");
+const ctx=canvas.getContext("2d");
 
-      const viewport = page.getViewport({
-        scale: scale,
-        rotation: rotation
-      });
+const viewport=page.getViewport({scale, rotation});
+canvas.height=viewport.height;
+canvas.width=viewport.width;
 
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+page.render({canvasContext:ctx, viewport}).promise.then(()=>{
+highlight(page, viewport);
+});
+});
+}
 
-      page.render({
-        canvasContext: ctx,
-        viewport: viewport
-      });
-    });
-  }
+function highlight(page, viewport){
+if(!searchTerm) return;
 
-  function goToPage(page) {
-    if (!pdfDoc) return;
-    if (page < 1 || page > pdfDoc.numPages) return;
-    currentPage = page;
-    renderPage(page);
-  }
+page.getTextContent().then(textContent=>{
+const ctx=document.getElementById("pdf").getContext("2d");
 
-  function goToInputPage() {
-    const page = parseInt(document.getElementById("pageInput").value);
-    goToPage(page);
-  }
+textContent.items.forEach(item=>{
+if(item.str.toLowerCase().includes(searchTerm)){
+const tx=pdfjsLib.Util.transform(viewport.transform, item.transform);
 
-  // 🔍 CERCA
-  async function searchText() {
-    const text = document.getElementById("searchText").value.toLowerCase();
+ctx.fillStyle="rgba(255,255,0,0.4)";
+ctx.fillRect(tx[4], tx[5]-10, item.width*scale, 15);
+}
+});
+});
+}
 
-    for (let i = 1; i <= pdfDoc.numPages; i++) {
-      const page = await pdfDoc.getPage(i);
-      const content = await page.getTextContent();
+function goToPage(p){
+if(p<1||p>pdfDoc.numPages)return;
+currentPage=p;
+renderPage(p);
+}
 
-      const strings = content.items.map(item => item.str.toLowerCase());
+function zoomIn(){ scale+=0.3; renderPage(currentPage); }
+function zoomOut(){ scale=Math.max(0.5, scale-0.3); renderPage(currentPage); }
 
-      if (strings.join(" ").includes(text)) {
-        goToPage(i);
-        alert("Trovato a pagina " + i);
-        return;
-      }
-    }
+function rotate(d){ rotation+=d; renderPage(currentPage); }
+function resetView(){ scale=1.5; rotation=0; renderPage(currentPage); }
 
-    alert("Non trovato");
-  }
+function toggleMenu(){
+const m=document.getElementById("menu");
+m.style.display=m.style.display==="block"?"none":"block";
+}
 
-  // 🔎 ZOOM
-  function zoomIn() {
-    scale += 0.3;
-    renderPage(currentPage);
-  }
+async function searchText(){
+searchTerm=document.getElementById("searchText").value.toLowerCase();
+results=[];
 
-  function zoomOut() {
-    scale -= 0.3;
-    if (scale < 0.5) scale = 0.5;
-    renderPage(currentPage);
-  }
+for(let i=1;i<=pdfDoc.numPages;i++){
+const page=await pdfDoc.getPage(i);
+const text=await page.getTextContent();
+const str=text.items.map(i=>i.str).join(" ").toLowerCase();
 
-  // 🔄 ROTAZIONE
-  function rotate(deg) {
-    rotation += deg;
-    renderPage(currentPage);
-  }
+if(str.includes(searchTerm)) results.push(i);
+}
 
-  function resetView() {
-    scale = 1.5;
-    rotation = 0;
-    renderPage(currentPage);
-  }
+buildSidebar();
 
-  // ⚙️ MENU
-  function toggleMenu() {
-    const menu = document.getElementById("menu");
-    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
-  }
+if(results.length){
+currentIndex=0;
+goToResult(0);
+}
+}
 
-  // LOAD PDF
-  pdfjsLib.getDocument(url).promise.then(pdf => {
-    pdfDoc = pdf;
-    renderPage(1);
-  });
+function buildSidebar(){
+const sb=document.getElementById("sidebar");
+sb.innerHTML="";
+
+results.forEach((p,i)=>{
+const div=document.createElement("div");
+div.className="result";
+div.innerText="Pagina "+p;
+div.onclick=()=>goToResult(i);
+sb.appendChild(div);
+});
+
+document.getElementById("resultInfo").innerText=
+results.length ? `1 / ${results.length}` : "0";
+}
+
+function goToResult(i){
+currentIndex=i;
+goToPage(results[i]);
+
+document.getElementById("resultInfo").innerText=
+(i+1)+" / "+results.length;
+}
+
+function nextResult(){
+if(!results.length)return;
+currentIndex=(currentIndex+1)%results.length;
+goToResult(currentIndex);
+}
+
+function prevResult(){
+if(!results.length)return;
+currentIndex=(currentIndex-1+results.length)%results.length;
+goToResult(currentIndex);
+}
+
+pdfjsLib.getDocument(url).promise.then(pdf=>{
+pdfDoc=pdf;
+renderPage(1);
+});
 </script>
 
 </body>
