@@ -284,6 +284,58 @@ pdfjsLib.getDocument(url).promise.then(pdf=>{
 pdfDoc=pdf;
 renderPage(1);
 });
+// 🖱️ SCROLL MOUSE (cambia pagina)
+let scrollTimeout = null;
+
+document.getElementById("pdf-container").addEventListener("wheel", (e) => {
+  e.preventDefault();
+
+  if (scrollTimeout) return;
+
+  if (e.deltaY > 0) {
+    nextPage();
+  } else {
+    prevPage();
+  }
+
+  // evita cambi troppo veloci
+  scrollTimeout = setTimeout(() => {
+    scrollTimeout = null;
+  }, 400);
+}, { passive: false });
+
+
+// ⌨️ TASTIERA
+document.addEventListener("keydown", (e) => {
+
+  if (e.key === "ArrowRight" || e.key === "PageDown") {
+    nextPage();
+  }
+
+  if (e.key === "ArrowLeft" || e.key === "PageUp") {
+    prevPage();
+  }
+
+});
+
+// 📱 SWIPE MOBILE
+let touchStartY = 0;
+
+document.getElementById("pdf-container").addEventListener("touchstart", (e) => {
+  touchStartY = e.touches[0].clientY;
+});
+
+document.getElementById("pdf-container").addEventListener("touchend", (e) => {
+  let touchEndY = e.changedTouches[0].clientY;
+
+  if (touchStartY - touchEndY > 50) {
+    nextPage(); // swipe su
+  }
+
+  if (touchEndY - touchStartY > 50) {
+    prevPage(); // swipe giù
+  }
+});
 </script>
 
 </body>
