@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>PDF mappa Ospedali PAV by Gianluca</title>
+<title>Viewer PDF PRO</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
@@ -16,7 +16,6 @@ body {
   align-items:center;
 }
 
-/* 🔝 TOPBAR CENTRATA */
 .topbar {
   background:#1e1e2f;
   padding:10px;
@@ -36,14 +35,12 @@ body {
   justify-content:center;
 }
 
-/* 🔵 TUOI */
 .primary button {
   background:#4a90e2;
   color:white;
   font-weight:bold;
 }
 
-/* ⚙️ CONTROLLI */
 .secondary button { background:white; }
 
 button,input {
@@ -52,7 +49,7 @@ button,input {
   border-radius:20px;
 }
 
-/* 📄 LAYOUT CENTRATO */
+/* LAYOUT */
 #layout {
   display:flex;
   width:95%;
@@ -85,9 +82,21 @@ button,input {
   border-radius:0 10px 10px 0;
 }
 
+/* PDF */
+#pdf-page {
+  position: relative;
+}
+
 canvas {
+  display:block;
   max-width:100%;
-  box-shadow:0 5px 20px rgba(0,0,0,0.2);
+}
+
+/* LINK LAYER */
+.annotationLayer {
+  position:absolute;
+  top:0;
+  left:0;
 }
 
 /* MENU */
@@ -116,12 +125,10 @@ canvas {
   <button onclick="goToPage(30)">Ospedali Spc</button>
   <button onclick="goToPage(32)">Reparti H (Mo)</button>
   <button onclick="goToPage(45)">Reparti H (Bo)</button>
-  <button onclick="goToPage(76)">Reparti S (Mo)</button>
+  <button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
 
 <div class="row secondary">
-
-<!-- ⬅️➡️ PAGINE -->
 <button onclick="prevPage()">⬅️ Pagina</button>
 <button onclick="nextPage()">➡️ Pagina</button>
 
@@ -137,7 +144,6 @@ canvas {
 <button onclick="zoomOut()">－</button>
 
 <button onclick="toggleMenu()">⚙️</button>
-
 </div>
 
 </div>
@@ -150,9 +156,11 @@ canvas {
 
 <div id="layout">
 <div id="sidebar"></div>
+
 <div id="pdf-container">
-<canvas id="pdf"></canvas>
+  <div id="pdf-page"></div>
 </div>
+
 </div>
 
 <script>
@@ -161,22 +169,50 @@ const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 let pdfDoc=null,currentPage=1,scale=1.5,rotation=0;
 let results=[],currentIndex=0,searchTerm="";
 
+/* 🔥 RENDER CON LINK */
 function renderPage(num){
 pdfDoc.getPage(num).then(page=>{
-const canvas=document.getElementById("pdf");
+
+const container=document.getElementById("pdf-page");
+container.innerHTML="";
+
+const canvas=document.createElement("canvas");
+container.appendChild(canvas);
+
 const ctx=canvas.getContext("2d");
 
 const viewport=page.getViewport({scale,rotation});
+
 canvas.height=viewport.height;
 canvas.width=viewport.width;
 
 page.render({canvasContext:ctx,viewport}).promise.then(()=>{
-highlight(page,viewport);
+
+/* ✅ LINK CLICCABILI */
+page.getAnnotations().then(annotations=>{
+const layer=document.createElement("div");
+layer.className="annotationLayer";
+layer.style.width=canvas.width+"px";
+layer.style.height=canvas.height+"px";
+
+container.appendChild(layer);
+
+pdfjsLib.AnnotationLayer.render({
+viewport:viewport.clone({dontFlip:true}),
+div:layer,
+annotations:annotations,
+page:page
 });
+});
+
+highlight(page,viewport);
+
+});
+
 });
 }
 
-/* ⬅️➡️ PAGINE */
+/* PAGINE */
 function nextPage(){
 if(currentPage<pdfDoc.numPages){
 currentPage++;
@@ -191,39 +227,27 @@ renderPage(currentPage);
 }
 }
 
-function highlight(page,viewport){
-if(!searchTerm)return;
-
-page.getTextContent().then(textContent=>{
-const ctx=document.getElementById("pdf").getContext("2d");
-
-textContent.items.forEach(item=>{
-if(item.str.toLowerCase().includes(searchTerm)){
-const tx=pdfjsLib.Util.transform(viewport.transform,item.transform);
-ctx.fillStyle="rgba(255,255,0,0.4)";
-ctx.fillRect(tx[4],tx[5]-10,item.width*scale,15);
-}
-});
-});
-}
-
 function goToPage(p){
 if(p<1||p>pdfDoc.numPages)return;
 currentPage=p;
 renderPage(p);
 }
 
+/* ZOOM */
 function zoomIn(){scale+=0.3;renderPage(currentPage);}
 function zoomOut(){scale=Math.max(0.5,scale-0.3);renderPage(currentPage);}
 
+/* ROTAZIONE */
 function rotate(d){rotation+=d;renderPage(currentPage);}
 function resetView(){scale=1.5;rotation=0;renderPage(currentPage);}
 
+/* MENU */
 function toggleMenu(){
 const m=document.getElementById("menu");
 m.style.display=m.style.display==="block"?"none":"block";
 }
 
+/* RICERCA */
 async function searchText(){
 searchTerm=document.getElementById("searchText").value.toLowerCase();
 results=[];
@@ -280,61 +304,27 @@ currentIndex=(currentIndex-1+results.length)%results.length;
 goToResult(currentIndex);
 }
 
+/* HIGHLIGHT BASE */
+function highlight(page,viewport){
+if(!searchTerm)return;
+
+page.getTextContent().then(textContent=>{
+const ctx=document.querySelector("canvas").getContext("2d");
+
+textContent.items.forEach(item=>{
+if(item.str.toLowerCase().includes(searchTerm)){
+const tx=pdfjsLib.Util.transform(viewport.transform,item.transform);
+ctx.fillStyle="rgba(255,255,0,0.3)";
+ctx.fillRect(tx[4],tx[5]-10,item.width*scale,15);
+}
+});
+});
+}
+
+/* LOAD */
 pdfjsLib.getDocument(url).promise.then(pdf=>{
 pdfDoc=pdf;
 renderPage(1);
-});
-// 🖱️ SCROLL MOUSE (cambia pagina)
-let scrollTimeout = null;
-
-document.getElementById("pdf-container").addEventListener("wheel", (e) => {
-  e.preventDefault();
-
-  if (scrollTimeout) return;
-
-  if (e.deltaY > 0) {
-    nextPage();
-  } else {
-    prevPage();
-  }
-
-  // evita cambi troppo veloci
-  scrollTimeout = setTimeout(() => {
-    scrollTimeout = null;
-  }, 400);
-}, { passive: false });
-
-
-// ⌨️ TASTIERA
-document.addEventListener("keydown", (e) => {
-
-  if (e.key === "ArrowRight" || e.key === "PageDown") {
-    nextPage();
-  }
-
-  if (e.key === "ArrowLeft" || e.key === "PageUp") {
-    prevPage();
-  }
-
-});
-
-// 📱 SWIPE MOBILE
-let touchStartY = 0;
-
-document.getElementById("pdf-container").addEventListener("touchstart", (e) => {
-  touchStartY = e.touches[0].clientY;
-});
-
-document.getElementById("pdf-container").addEventListener("touchend", (e) => {
-  let touchEndY = e.changedTouches[0].clientY;
-
-  if (touchStartY - touchEndY > 50) {
-    nextPage(); // swipe su
-  }
-
-  if (touchEndY - touchStartY > 50) {
-    prevPage(); // swipe giù
-  }
 });
 </script>
 
