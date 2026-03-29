@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>1PDF Viewer Test Link + Pagine</title>
+<title>2PDF Viewer Test Link + Pagine</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
@@ -145,6 +145,14 @@ pdfjsLib.getDocument(url).promise.then(pdf=>{
   pdfDoc = pdf;
   renderPage(currentPage);
 });
+  
+function goToPage(page) {
+     document.getElementById("viewer").src =
+      viewerBase + "?file=" + pdfFile +
+      "#page=" + page +
+      "&zoom=page-width" +
+      "&toolbar=0";
+}
 </script>
 </body>
 </html>
