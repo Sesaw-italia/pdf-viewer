@@ -2,9 +2,8 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>PDF mappa Ospedali PAV by Gianluca</title>
+<title>PDF Viewer</title>
 
-<!-- ✅ PDF.js corretto -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
@@ -88,6 +87,7 @@ button,input {
   align-items:center;
   background:white;
   border-radius:0 10px 10px 0;
+  overflow:auto;
 }
 
 /* PDF */
@@ -98,6 +98,7 @@ button,input {
 canvas {
   display:block;
   max-width:100%;
+  z-index:0;
 }
 
 /* LINK LAYER */
@@ -105,6 +106,12 @@ canvas {
   position:absolute;
   top:0;
   left:0;
+  z-index:5;
+}
+
+.annotationLayer a {
+  position:absolute;
+  cursor:pointer;
 }
 
 /* MENU */
@@ -129,7 +136,7 @@ canvas {
 <button onclick="goToPage(6)">Elisuperficie</button>
 <button onclick="goToPage(13)">Autostrada A1</button>
 <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-<button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
+<button onclick="goToPage(22)">Mappa Ospedali_(Bo)</button>
 <button onclick="goToPage(30)">Ospedali Spc</button>
 <button onclick="goToPage(32)">Reparti H (Mo)</button>
 <button onclick="goToPage(45)">Reparti H (Bo)</button>
@@ -176,7 +183,7 @@ const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 let pdfDoc=null,currentPage=1,scale=1.5,rotation=0;
 let results=[],currentIndex=0,searchTerm="";
 
-/* 🔥 RENDER CON LINK FUNZIONANTI */
+/* RENDER PAGINA CON LINK FUNZIONANTI */
 function renderPage(num){
 pdfDoc.getPage(num).then(page=>{
 
@@ -187,30 +194,38 @@ const canvas=document.createElement("canvas");
 container.appendChild(canvas);
 
 const ctx=canvas.getContext("2d");
-
 const viewport=page.getViewport({scale,rotation});
 
 canvas.height=viewport.height;
 canvas.width=viewport.width;
 
-page.render({canvasContext:ctx,viewport}).promise.then(()=>{
+page.render({canvasContext:ctx,viewport}).promise.then(async ()=>{
 
-/* ✅ LINK REALMENTE FUNZIONANTI */
 const linkService = new pdfjsViewer.SimpleLinkService();
-
-const annotationLayer = new pdfjsViewer.AnnotationLayerBuilder({
-  pageDiv: container,
-  pdfPage: page,
-  viewport: viewport,
-  linkService: linkService,
+linkService.setDocument(pdfDoc);
+linkService.setViewer({
+  scrollPageIntoView: ({ pageNumber }) => goToPage(pageNumber)
 });
 
-annotationLayer.render(viewport);
+const annotationLayerDiv = document.createElement("div");
+annotationLayerDiv.className = "annotationLayer";
+annotationLayerDiv.style.height = viewport.height + "px";
+annotationLayerDiv.style.width = viewport.width + "px";
+container.appendChild(annotationLayerDiv);
+
+const annotations = await page.getAnnotations();
+
+pdfjsViewer.AnnotationLayer.render({
+  div: annotationLayerDiv,
+  annotations: annotations,
+  page: page,
+  viewport: viewport.clone({ dontFlip: true }),
+  linkService: linkService,
+});
 
 highlight(page,viewport);
 
 });
-
 });
 }
 
@@ -258,7 +273,6 @@ for(let i=1;i<=pdfDoc.numPages;i++){
 const page=await pdfDoc.getPage(i);
 const text=await page.getTextContent();
 const str=text.items.map(i=>i.str).join(" ").toLowerCase();
-
 if(str.includes(searchTerm))results.push(i);
 }
 
@@ -323,10 +337,24 @@ ctx.fillRect(tx[4],tx[5]-10,item.width*scale,15);
 });
 }
 
-/* LOAD */
+/* LOAD PDF */
 pdfjsLib.getDocument(url).promise.then(pdf=>{
 pdfDoc=pdf;
 renderPage(1);
+});
+
+/* SWIPE MOBILE */
+let touchStartY = 0;
+
+document.getElementById("pdf-container").addEventListener("touchstart", (e) => {
+  touchStartY = e.touches[0].clientY;
+});
+
+document.getElementById("pdf-container").addEventListener("touchend", (e) => {
+  let touchEndY = e.changedTouches[0].clientY;
+
+  if (touchStartY - touchEndY > 50) nextPage();
+  if (touchEndY - touchStartY > 50) prevPage();
 });
 </script>
 
