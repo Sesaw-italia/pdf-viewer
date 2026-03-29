@@ -140,7 +140,7 @@ canvas {
 <button onclick="goToPage(30)">Ospedali Spc</button>
 <button onclick="goToPage(32)">Reparti H (Mo)</button>
 <button onclick="goToPage(45)">Reparti H (Bo)</button>
-<button onclick="goToPage(76)">Reparti S (Mo)</button>
+<button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
 
 <div class="row secondary">
@@ -185,7 +185,7 @@ let results=[],currentIndex=0,searchTerm="";
 
 /* RENDER PAGINA CON LINK FUNZIONANTI */
 function renderPage(num){
-pdfDoc.getPage(num).then(page=>{
+pdfDoc.getPage(num).then(async page=>{
 
 const container=document.getElementById("pdf-page");
 container.innerHTML="";
@@ -199,33 +199,65 @@ const viewport=page.getViewport({scale,rotation});
 canvas.height=viewport.height;
 canvas.width=viewport.width;
 
-page.render({canvasContext:ctx,viewport}).promise.then(async ()=>{
+await page.render({canvasContext:ctx,viewport}).promise;
 
-const linkService = new pdfjsViewer.SimpleLinkService();
-linkService.setDocument(pdfDoc);
-linkService.setViewer({
-  scrollPageIntoView: ({ pageNumber }) => goToPage(pageNumber)
-});
-
-const annotationLayerDiv = document.createElement("div");
-annotationLayerDiv.className = "annotationLayer";
-annotationLayerDiv.style.height = viewport.height + "px";
-annotationLayerDiv.style.width = viewport.width + "px";
-container.appendChild(annotationLayerDiv);
-
+/* 🔥 LINK MANUALI (SOLUZIONE DEFINITIVA) */
 const annotations = await page.getAnnotations();
 
-pdfjsViewer.AnnotationLayer.render({
-  div: annotationLayerDiv,
-  annotations: annotations,
-  page: page,
-  viewport: viewport.clone({ dontFlip: true }),
-  linkService: linkService,
+const linkLayer = document.createElement("div");
+linkLayer.style.position="absolute";
+linkLayer.style.top=0;
+linkLayer.style.left=0;
+linkLayer.style.width=viewport.width+"px";
+linkLayer.style.height=viewport.height+"px";
+linkLayer.style.zIndex=10;
+
+container.appendChild(linkLayer);
+
+annotations.forEach(annotation=>{
+if(annotation.subtype==="Link"){
+
+const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
+const [x1,y1,x2,y2] = viewport.convertToViewportRectangle(rect);
+
+const link = document.createElement("a");
+
+link.style.position="absolute";
+link.style.left=Math.min(x1,x2)+"px";
+link.style.top=Math.min(y1,y2)+"px";
+link.style.width=Math.abs(x2-x1)+"px";
+link.style.height=Math.abs(y2-y1)+"px";
+
+/* DEBUG (puoi attivarlo se vuoi vedere i link)
+link.style.background="rgba(255,0,0,0.2)";
+*/
+
+if(annotation.url){
+/* 🌐 LINK ESTERNO */
+link.href = annotation.url;
+link.target="_blank";
+}
+
+if(annotation.dest){
+/* 📄 LINK INTERNO */
+link.href="#";
+link.onclick = async (e)=>{
+e.preventDefault();
+
+const dest = await pdfDoc.getDestination(annotation.dest);
+const pageRef = dest[0];
+const pageIndex = await pdfDoc.getPageIndex(pageRef);
+
+goToPage(pageIndex + 1);
+};
+}
+
+linkLayer.appendChild(link);
+}
 });
 
 highlight(page,viewport);
 
-});
 });
 }
 
