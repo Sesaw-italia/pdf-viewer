@@ -2,11 +2,9 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>3PDF Viewer Test Link + Pagine</title>
+<title>1PDF Viewer PRO</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
 
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -14,147 +12,230 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 </script>
 
 <style>
-body { margin:0; font-family:Arial; background:#eef1f5; display:flex; flex-direction:column; align-items:center; }
-#controls { margin:10px; }
-button { padding:6px 12px; margin:0 5px; border-radius:5px; border:none; cursor:pointer; }
-#pdf-container { flex:1; width:95%; max-width:1200px; height:85vh; background:white; border-radius:10px; overflow:auto; display:flex; justify-content:center; align-items:center; }
-#pdf-page { position: relative; line-height:0; font-size:0; }
-#pdf-page a { display:block; position:absolute; cursor:pointer; }
-.link-debug { background: rgba(255,0,0,0.3); }
+body {
+  margin:0;
+  font-family:Arial;
+  background:#eef1f5;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: #f0f0f0;
-    }
+/* TOPBAR */
+.topbar {
+  background:#222;
+  padding:10px;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  border-radius:15px;
+  margin-top:10px;
+  width:95%;
+  max-width:1200px;
+}
 
-    .topbar {
-      background: #222;
-      padding: 10px;
-      display: flex;
-      overflow-x: auto;
-      white-space: nowrap;
-    }
+.topbar button {
+  margin:5px;
+  padding:8px 12px;
+  border:none;
+  background:#4a90e2;
+  color:white;
+  border-radius:20px;
+  cursor:pointer;
+}
 
-    .topbar button {
-      margin: 5px;
-      padding: 8px 12px;
-      border: none;
-      background: #ffffff;
-      cursor: pointer;
-      border-radius: 20px;
-    }
+/* CONTROLLI */
+#controls {
+  margin:10px;
+}
 
-    iframe {
-      width: 100%;
-      height: 90vh;
-      border: none;
-    }
- 
+/* PDF */
+#pdf-container {
+  width:95%;
+  max-width:1200px;
+  height:85vh;
+  background:white;
+  border-radius:10px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+  position:relative;
+}
+
+/* animazione */
+.fade {
+  animation: fadeIn 0.3s;
+}
+@keyframes fadeIn {
+  from {opacity:0; transform:scale(0.98);}
+  to {opacity:1; transform:scale(1);}
+}
+
+#pdf-page {
+  position:relative;
+}
+
+canvas {
+  max-width:100%;
+  display:block;
+}
+
+/* LINK LAYER */
+.linkLayer {
+  position:absolute;
+  top:0;
+  left:0;
+  z-index:1000;
+}
+
+.linkLayer a {
+  position:absolute;
+  cursor:pointer;
+  transition: background 0.2s;
+}
+
+/* hover link */
+.linkLayer a:hover {
+  background:rgba(0, 150, 255, 0.2);
+}
 </style>
 </head>
 
 <body>
+
+<!-- 🔵 TUOI PULSANTI -->
 <div class="topbar">
   <button onclick="goToPage(1)">Inizio</button>
   <button onclick="goToPage(6)">Elisuperficie</button>
   <button onclick="goToPage(13)">Autostrada A1</button>
-  <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-  <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
+  <button onclick="goToPage(14)">Mappa Ospedali</button>
+  <button onclick="goToPage(22)">Ospedali (Bo)</button>
   <button onclick="goToPage(30)">Ospedali Spc</button>
   <button onclick="goToPage(32)">Reparti H (Mo)</button>
   <button onclick="goToPage(45)">Reparti H (Bo)</button>
-  <button onclick="goToPage(76)">Reparti S_(Mo)</button>
+  <button onclick="goToPage(76)">Reparti S</button>
 </div>
 
+<!-- CONTROLLI -->
 <div id="controls">
   <button onclick="prevPage()">⬅ Pagina</button>
   <button onclick="nextPage()">Pagina ➡</button>
   <span id="pageInfo"></span>
 </div>
 
+<!-- PDF -->
 <div id="pdf-container">
   <div id="pdf-page"></div>
 </div>
 
 <script>
 const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
-let pdfDoc=null, currentPage=1, scale=1.5;
+
+let pdfDoc=null;
+let currentPage=1;
+let scale=1.5;
+
+/* RENDER */
 async function renderPage(num){
-  const page = await pdfDoc.getPage(num);
-  const container = document.getElementById("pdf-page");
-  container.innerHTML = "";
-  container.style.position = "relative";
+const page=await pdfDoc.getPage(num);
 
-  const canvas = document.createElement("canvas");
-  container.appendChild(canvas);
-  const ctx = canvas.getContext("2d");
-  const viewport = page.getViewport({ scale });
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
+const container=document.getElementById("pdf-page");
+container.innerHTML="";
+container.classList.add("fade");
 
-  await page.render({ canvasContext: ctx, viewport }).promise;
+const canvas=document.createElement("canvas");
+container.appendChild(canvas);
 
-  // ===== LINK LAYER =====
-  const annotations = await page.getAnnotations();
-  const linkLayer = document.createElement("div");
-  linkLayer.style.position = "absolute";
-  linkLayer.style.top = 0;
-  linkLayer.style.left = 0;
-  linkLayer.style.width = viewport.width + "px";
-  linkLayer.style.height = viewport.height + "px";
-  linkLayer.style.zIndex = "20";
-  container.appendChild(linkLayer);
+const ctx=canvas.getContext("2d");
+const viewport=page.getViewport({scale});
 
-  for (const annotation of annotations) {
-    if (annotation.subtype !== "Link") continue;
-    const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
-    const [x1, y1, x2, y2] = viewport.convertToViewportRectangle(rect);
-    const left = Math.min(x1,x2), top = Math.min(y1,y2);
-    const width = Math.abs(x2-x1), height = Math.abs(y2-y1);
+canvas.width=viewport.width;
+canvas.height=viewport.height;
 
-    const link = document.createElement("a");
-    link.style.left = left + "px";
-    link.style.top = top + "px";
-    link.style.width = width + "px";
-    link.style.height = height + "px";
-    link.style.position = "absolute";
-    link.style.cursor = "pointer";
+await page.render({canvasContext:ctx,viewport}).promise;
 
-    // DEBUG: rettangolo rosso
-    link.classList.add("link-debug");
+/* LINK */
+const annotations=await page.getAnnotations();
+const linkLayer=document.createElement("div");
 
-    if(annotation.url){
-      link.href = annotation.url;
-      link.target = "_blank";
-    }
+linkLayer.className="linkLayer";
+linkLayer.style.width=viewport.width+"px";
+linkLayer.style.height=viewport.height+"px";
 
-    linkLayer.appendChild(link);
-  }
+container.appendChild(linkLayer);
 
-  document.getElementById("pageInfo").innerText = `Pagina ${currentPage} / ${pdfDoc.numPages}`;
+for(const ann of annotations){
+
+if(ann.subtype!=="Link") continue;
+
+const rect=pdfjsLib.Util.normalizeRect(ann.rect);
+const [x1,y1,x2,y2]=viewport.convertToViewportRectangle(rect);
+
+const link=document.createElement("a");
+
+link.style.left=Math.min(x1,x2)+"px";
+link.style.top=Math.min(y1,y2)+"px";
+link.style.width=Math.abs(x2-x1)+"px";
+link.style.height=Math.abs(y2-y1)+"px";
+
+if(ann.url){
+link.href=ann.url;
+link.target="_blank";
+}
+else if(ann.dest){
+link.href="#";
+link.onclick=async(e)=>{
+e.preventDefault();
+let dest=ann.dest;
+
+if(typeof dest==="string"){
+dest=await pdfDoc.getDestination(dest);
 }
 
-// ==== PAGINA PRECEDENTE/SUCCESSIVA
-function nextPage(){ if(currentPage < pdfDoc.numPages){ currentPage++; renderPage(currentPage); } }
-function prevPage(){ if(currentPage > 1){ currentPage--; renderPage(currentPage); } }
+if(Array.isArray(dest)){
+const pageIndex=await pdfDoc.getPageIndex(dest[0]);
+goToPage(pageIndex+1);
+}
+};
+}
 
-// ==== LOAD PDF
+linkLayer.appendChild(link);
+}
+
+/* info pagina */
+document.getElementById("pageInfo").innerText =
+`Pagina ${currentPage} / ${pdfDoc.numPages}`;
+}
+
+/* NAVIGAZIONE */
+function goToPage(p){
+if(p>=1 && p<=pdfDoc.numPages){
+currentPage=p;
+renderPage(p);
+}
+}
+
+function nextPage(){
+if(currentPage<pdfDoc.numPages){
+currentPage++;
+renderPage(currentPage);
+}
+}
+
+function prevPage(){
+if(currentPage>1){
+currentPage--;
+renderPage(currentPage);
+}
+}
+
+/* LOAD */
 pdfjsLib.getDocument(url).promise.then(pdf=>{
-  pdfDoc = pdf;
-  renderPage(currentPage);
+pdfDoc=pdf;
+renderPage(1);
 });
-const viewerBase = "https://mozilla.github.io/pdf.js/web/viewer.html";
-  const pdfFile = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
-
-  function goToPage(page) {
-     document.getElementById("viewer").src =
-      viewerBase + "?file=" + pdfFile +
-      "#page=" + page +
-      "&zoom=page-width" +
-      "&toolbar=0";
-  }
-  goToPage(1);
 </script>
+
 </body>
 </html>
