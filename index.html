@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>PDF Viewer Completo</title>
+<title>PDF Viewer Hyperlink Evidenziati</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
@@ -14,115 +14,22 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 </script>
 
 <style>
-body {
-  margin:0;
-  font-family:Arial;
-  background:#eef1f5;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-.topbar {
-  background:#1e1e2f;
-  padding:10px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  width:95%;
-  max-width:1200px;
-  border-radius:15px;
-  margin-top:10px;
-}
-
-.row {
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  justify-content:center;
-}
-
-.primary button {
-  background:#4a90e2;
-  color:white;
-  font-weight:bold;
-}
-
+body { margin:0; font-family:Arial; background:#eef1f5; display:flex; flex-direction:column; align-items:center; }
+.topbar { background:#1e1e2f; padding:10px; display:flex; flex-direction:column; gap:8px; width:95%; max-width:1200px; border-radius:15px; margin-top:10px; }
+.row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.primary button { background:#4a90e2; color:white; font-weight:bold; }
 .secondary button { background:white; }
-
-button,input {
-  padding:6px 12px;
-  border:none;
-  border-radius:20px;
-  cursor:pointer;
-}
-
-/* LAYOUT */
-#layout {
-  display:flex;
-  width:95%;
-  max-width:1200px;
-  height:85vh;
-  margin-top:10px;
-}
-
-#sidebar {
-  width:200px;
-  background:#fff;
-  overflow:auto;
-  border-radius:10px 0 0 10px;
-  padding:10px;
-}
-
-.result {
-  padding:6px;
-  cursor:pointer;
-  border-radius:8px;
-}
+button,input { padding:6px 12px; border:none; border-radius:20px; cursor:pointer; }
+#layout { display:flex; width:95%; max-width:1200px; height:85vh; margin-top:10px; }
+#sidebar { width:200px; background:#fff; overflow:auto; border-radius:10px 0 0 10px; padding:10px; }
+.result { padding:6px; cursor:pointer; border-radius:8px; }
 .result:hover { background:#eee; }
-
-#pdf-container {
-  flex:1;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:white;
-  border-radius:0 10px 10px 0;
-  overflow:auto;
-}
-
-#pdf-page {
-  position: relative;
-  line-height:0;
-  font-size:0;
-}
-
-canvas {
-  display:block;
-  max-width:100%;
-}
-
-.annotationLayer {
-  position:absolute;
-  top:0;
-  left:0;
-  z-index:5;
-}
-
-.annotationLayer a {
-  position:absolute;
-  cursor:pointer;
-}
-
-.menu {
-  position:absolute;
-  top:100px;
-  right:50px;
-  background:white;
-  border-radius:10px;
-  padding:10px;
-  display:none;
-}
+#pdf-container { flex:1; display:flex; justify-content:center; align-items:center; background:white; border-radius:0 10px 10px 0; overflow:auto; }
+#pdf-page { position: relative; line-height:0; font-size:0; }
+canvas { display:block; max-width:100%; }
+.annotationLayer { position:absolute; top:0; left:0; z-index:5; }
+.annotationLayer a { position:absolute; cursor:pointer; display:block; }
+.menu { position:absolute; top:100px; right:50px; background:white; border-radius:10px; padding:10px; display:none; }
 </style>
 </head>
 
@@ -153,24 +60,12 @@ canvas {
 <button onclick="nextResult()">➡</button>
 
 <span id="resultInfo"></span>
-
-<button onclick="zoomIn()">＋</button>
-<button onclick="zoomOut()">－</button>
-
-<button onclick="toggleMenu()">⚙️</button>
 </div>
 
-</div>
-
-<div id="menu" class="menu">
-<button onclick="rotate(90)">Ruota ➡️</button>
-<button onclick="rotate(-90)">Ruota ⬅️</button>
-<button onclick="resetView()">Reset</button>
 </div>
 
 <div id="layout">
 <div id="sidebar"></div>
-
 <div id="pdf-container">
   <div id="pdf-page"></div>
 </div>
@@ -178,41 +73,39 @@ canvas {
 
 <script>
 const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
-let pdfDoc=null,currentPage=1,scale=1.5,rotation=0;
+let pdfDoc=null,currentPage=1,scale=1.5;
 let results=[],currentIndex=0,searchTerm="";
 
-/* RENDER PAGINA CON LINK */
 async function renderPage(num){
   const page = await pdfDoc.getPage(num);
   const container = document.getElementById("pdf-page");
   container.innerHTML = "";
   container.style.position="relative";
 
-  const canvas=document.createElement("canvas");
+  const canvas = document.createElement("canvas");
   container.appendChild(canvas);
-  const ctx=canvas.getContext("2d");
-  const viewport=page.getViewport({scale,rotation});
-  canvas.width=viewport.width;
-  canvas.height=viewport.height;
+  const ctx = canvas.getContext("2d");
+  const viewport = page.getViewport({scale});
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
 
   await page.render({canvasContext:ctx,viewport}).promise;
 
-  // ===== LINK LAYER PULITO =====
-  const annotations=await page.getAnnotations();
-  const linkLayer=document.createElement("div");
+  // ===== LINK LAYER EVIDENZIATO =====
+  const annotations = await page.getAnnotations();
+  const linkLayer = document.createElement("div");
   linkLayer.style.position="absolute";
-  linkLayer.style.top=0;
-  linkLayer.style.left=0;
-  linkLayer.style.width=viewport.width+"px";
-  linkLayer.style.height=viewport.height+"px";
-  linkLayer.style.zIndex="20";
+  linkLayer.style.top = 0;
+  linkLayer.style.left = 0;
+  linkLayer.style.width = viewport.width+"px";
+  linkLayer.style.height = viewport.height+"px";
+  linkLayer.style.zIndex = 20;
   container.appendChild(linkLayer);
 
   for(const annotation of annotations){
     if(annotation.subtype!=="Link") continue;
-
-    const rect=pdfjsLib.Util.normalizeRect(annotation.rect);
-    const [x1,y1,x2,y2]=viewport.convertToViewportRectangle(rect);
+    const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
+    const [x1,y1,x2,y2] = viewport.convertToViewportRectangle(rect);
     const left=Math.min(x1,x2), top=Math.min(y1,y2);
     const width=Math.abs(x2-x1), height=Math.abs(y2-y1);
 
@@ -223,19 +116,14 @@ async function renderPage(num){
     link.style.height=height+"px";
     link.style.position="absolute";
     link.style.cursor="pointer";
-    link.style.display="block";
-    link.style.background="transparent"; // NIENTE ROSSO
+    link.style.background="rgba(255,255,0,0.3)"; // evidenzia in giallo
 
-    // LINK ESTERNO
     if(annotation.url){
-      link.href=annotation.url;
+      link.href = annotation.url;
       link.target="_blank";
-    }
-
-    // LINK INTERNO PDF
-    else if(annotation.dest){
+    } else if(annotation.dest){
       link.href="#";
-      link.onclick = async (e) => {
+      link.onclick = async e => {
         e.preventDefault();
         let dest = annotation.dest;
         if(typeof dest === "string") dest = await pdfDoc.getDestination(dest);
@@ -246,7 +134,6 @@ async function renderPage(num){
         }
       };
     }
-
     linkLayer.appendChild(link);
   }
 
@@ -254,26 +141,12 @@ async function renderPage(num){
   document.getElementById("resultInfo").innerText=`Pagina ${currentPage} / ${pdfDoc.numPages}`;
 }
 
-/* PAGINE */
+// PAGINE
 function nextPage(){if(currentPage<pdfDoc.numPages){currentPage++;renderPage(currentPage);}}
 function prevPage(){if(currentPage>1){currentPage--;renderPage(currentPage);}}
 function goToPage(p){if(p>=1 && p<=pdfDoc.numPages){currentPage=p;renderPage(p);}}
 
-/* ZOOM */
-function zoomIn(){scale+=0.3;renderPage(currentPage);}
-function zoomOut(){scale=Math.max(0.5,scale-0.3);renderPage(currentPage);}
-
-/* ROTAZIONE */
-function rotate(d){rotation+=d;renderPage(currentPage);}
-function resetView(){scale=1.5;rotation=0;renderPage(currentPage);}
-
-/* MENU */
-function toggleMenu(){
-  const m=document.getElementById("menu");
-  m.style.display=m.style.display==="block"?"none":"block";
-}
-
-/* RICERCA */
+// RICERCA
 async function searchText(){
   searchTerm=document.getElementById("searchText").value.toLowerCase();
   results=[];
@@ -306,19 +179,10 @@ function goToResult(i){
   document.getElementById("resultInfo").innerText=(i+1)+" / "+results.length;
 }
 
-function nextResult(){
-  if(!results.length) return;
-  currentIndex=(currentIndex+1)%results.length;
-  goToResult(currentIndex);
-}
+function nextResult(){if(!results.length) return; currentIndex=(currentIndex+1)%results.length; goToResult(currentIndex);}
+function prevResult(){if(!results.length) return; currentIndex=(currentIndex-1+results.length)%results.length; goToResult(currentIndex);}
 
-function prevResult(){
-  if(!results.length) return;
-  currentIndex=(currentIndex-1+results.length)%results.length;
-  goToResult(currentIndex);
-}
-
-/* HIGHLIGHT */
+// HIGHLIGHT RICERCA
 function highlight(page,viewport){
   if(!searchTerm) return;
   page.getTextContent().then(textContent=>{
@@ -333,13 +197,13 @@ function highlight(page,viewport){
   });
 }
 
-/* LOAD PDF */
+// LOAD PDF
 pdfjsLib.getDocument(url).promise.then(pdf=>{
   pdfDoc=pdf;
-  renderPage(1);
+  renderPage(currentPage);
 });
 
-/* SWIPE MOBILE */
+// SWIPE MOBILE
 let touchStartY=0;
 document.getElementById("pdf-container").addEventListener("touchstart",e=>{touchStartY=e.touches[0].clientY;});
 document.getElementById("pdf-container").addEventListener("touchend",e=>{
