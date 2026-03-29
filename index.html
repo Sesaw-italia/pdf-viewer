@@ -139,7 +139,7 @@ canvas {
 <button onclick="goToPage(22)">Mappa Ospedali_(Bo)</button>
 <button onclick="goToPage(30)">Ospedali Spc</button>
 <button onclick="goToPage(32)">Reparti H (Mo)</button>
-<button onclick="goToPage(45)">Reparti H (Bo)</button>
+<button onclick="goToPage(45)">Reparti H_(Bo)</button>
 <button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
 
@@ -184,81 +184,84 @@ let pdfDoc=null,currentPage=1,scale=1.5,rotation=0;
 let results=[],currentIndex=0,searchTerm="";
 
 /* RENDER PAGINA CON LINK FUNZIONANTI */
-function renderPage(num){
-pdfDoc.getPage(num).then(async page=>{
+async function renderPage(num){
+const page = await pdfDoc.getPage(num);
 
-const container=document.getElementById("pdf-page");
-container.innerHTML="";
+const container = document.getElementById("pdf-page");
+container.innerHTML = "";
+container.style.position = "relative";
+container.style.lineHeight = "0";
 
-const canvas=document.createElement("canvas");
+const canvas = document.createElement("canvas");
 container.appendChild(canvas);
 
-const ctx=canvas.getContext("2d");
-const viewport=page.getViewport({scale,rotation});
+const ctx = canvas.getContext("2d");
+const viewport = page.getViewport({ scale, rotation });
 
-canvas.height=viewport.height;
-canvas.width=viewport.width;
+canvas.width = viewport.width;
+canvas.height = viewport.height;
 
-await page.render({canvasContext:ctx,viewport}).promise;
+await page.render({
+  canvasContext: ctx,
+  viewport: viewport
+}).promise;
 
-/* 🔥 LINK MANUALI (SOLUZIONE DEFINITIVA) */
+/* ===== LAYER LINK ===== */
 const annotations = await page.getAnnotations();
 
 const linkLayer = document.createElement("div");
-linkLayer.style.position="absolute";
-linkLayer.style.top=0;
-linkLayer.style.left=0;
-linkLayer.style.width=viewport.width+"px";
-linkLayer.style.height=viewport.height+"px";
-linkLayer.style.zIndex=10;
+linkLayer.style.position = "absolute";
+linkLayer.style.top = "0px";
+linkLayer.style.left = "0px";
+linkLayer.style.width = viewport.width + "px";
+linkLayer.style.height = viewport.height + "px";
+linkLayer.style.zIndex = "10";
 
 container.appendChild(linkLayer);
 
-annotations.forEach(annotation=>{
-if(annotation.subtype==="Link"){
+/* viewport corretto per le annotations */
+const linkViewport = viewport.clone({ dontFlip: true });
 
-const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
-const [x1,y1,x2,y2] = viewport.convertToViewportRectangle(rect);
+annotations.forEach(annotation => {
+  if (annotation.subtype === "Link") {
 
-const link = document.createElement("a");
+    const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
+    const [x1, y1, x2, y2] = linkViewport.convertToViewportRectangle(rect);
 
-link.style.position="absolute";
-link.style.left=Math.min(x1,x2)+"px";
-link.style.top=Math.min(y1,y2)+"px";
-link.style.width=Math.abs(x2-x1)+"px";
-link.style.height=Math.abs(y2-y1)+"px";
+    const link = document.createElement("a");
+    link.style.position = "absolute";
+    link.style.left = Math.min(x1, x2) + "px";
+    link.style.top = Math.min(y1, y2) + "px";
+    link.style.width = Math.abs(x2 - x1) + "px";
+    link.style.height = Math.abs(y2 - y1) + "px";
 
-/* DEBUG (puoi attivarlo se vuoi vedere i link)
-link.style.background="rgba(255,0,0,0.2)";
-*/
+    /* DEBUG rettangoli link */
+    // link.style.background = "rgba(255,0,0,0.2)";
 
-if(annotation.url){
-/* 🌐 LINK ESTERNO */
-link.href = annotation.url;
-link.target="_blank";
-}
+    /* LINK ESTERNI */
+    if (annotation.url) {
+      link.href = annotation.url;
+      link.target = "_blank";
+    }
 
-if(annotation.dest){
-/* 📄 LINK INTERNO */
-link.href="#";
-link.onclick = async (e)=>{
-e.preventDefault();
+    /* LINK INTERNI PDF */
+    if (annotation.dest) {
+      link.href = "#";
+      link.onclick = async (e) => {
+        e.preventDefault();
+        const dest = await pdfDoc.getDestination(annotation.dest);
+        const pageRef = dest[0];
+        const pageIndex = await pdfDoc.getPageIndex(pageRef);
+        goToPage(pageIndex + 1);
+      };
+    }
 
-const dest = await pdfDoc.getDestination(annotation.dest);
-const pageRef = dest[0];
-const pageIndex = await pdfDoc.getPageIndex(pageRef);
-
-goToPage(pageIndex + 1);
-};
-}
-
-linkLayer.appendChild(link);
-}
+    linkLayer.appendChild(link);
+  }
 });
 
-highlight(page,viewport);
-
-});
+/* evidenzia ricerca */
+highlight(page, viewport);
 }
 
 /* PAGINE */
