@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>PDF mappa Ospedali PAV by Gianluca</title>
+<title>PDF Viewer Test Link + Pagine</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
@@ -15,66 +15,41 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 <style>
 body { margin:0; font-family:Arial; background:#eef1f5; display:flex; flex-direction:column; align-items:center; }
-.topbar { background:#1e1e2f; padding:10px; display:flex; flex-direction:column; gap:8px; width:95%; max-width:1200px; border-radius:15px; margin-top:10px; }
-.row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-.primary button { background:#4a90e2; color:white; font-weight:bold; }
-.secondary button { background:white; }
-button,input { padding:6px 12px; border:none; border-radius:20px; cursor:pointer; }
-#layout { display:flex; width:95%; max-width:1200px; height:85vh; margin-top:10px; }
-#sidebar { width:200px; background:#fff; overflow:auto; border-radius:10px 0 0 10px; padding:10px; }
-.result { padding:6px; cursor:pointer; border-radius:8px; }
-.result:hover { background:#eee; }
-#pdf-container { flex:1; display:flex; justify-content:center; align-items:center; background:white; border-radius:0 10px 10px 0; overflow:auto; }
+#controls { margin:10px; }
+button { padding:6px 12px; margin:0 5px; border-radius:5px; border:none; cursor:pointer; }
+#pdf-container { flex:1; width:95%; max-width:1200px; height:85vh; background:white; border-radius:10px; overflow:auto; display:flex; justify-content:center; align-items:center; }
 #pdf-page { position: relative; line-height:0; font-size:0; }
-canvas { display:block; max-width:100%; }
-.annotationLayer { position:absolute; top:0; left:0; z-index:5; }
-.annotationLayer a { position:absolute; cursor:pointer; display:block; }
-.menu { position:absolute; top:100px; right:50px; background:white; border-radius:10px; padding:10px; display:none; }
+#pdf-page a { display:block; position:absolute; cursor:pointer; }
+.link-debug { background: rgba(255,0,0,0.3); }
 </style>
 </head>
 
 <body>
-
 <div class="topbar">
-
-<div class="row primary">
-<button onclick="goToPage(1)">Inizio</button>
-<button onclick="goToPage(6)">Elisuperficie</button>
-<button onclick="goToPage(13)">Autostrada A1</button>
-<button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-<button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
-<button onclick="goToPage(30)">Ospedali Spc</button>
-<button onclick="goToPage(32)">Reparti H_(Mo)</button>
-<button onclick="goToPage(45)">Reparti H_(Bo)</button>
-<button onclick="goToPage(76)">Reparti S_(Mo)</button>
+  <button onclick="goToPage(1)">Inizio</button>
+  <button onclick="goToPage(6)">Elisuperficie</button>
+  <button onclick="goToPage(13)">Autostrada A1</button>
+  <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
+  <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
+  <button onclick="goToPage(30)">Ospedali Spc</button>
+  <button onclick="goToPage(32)">Reparti H (Mo)</button>
+  <button onclick="goToPage(45)">Reparti H (Bo)</button>
+  <button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
 
-<div class="row secondary">
-<button onclick="prevPage()">⬅️ Pagina</button>
-<button onclick="nextPage()">➡️ Pagina</button>
-
-<input type="text" id="searchText" placeholder="Cerca...">
-<button onclick="searchText()">Cerca</button>
-
-<button onclick="prevResult()">⬅</button>
-<button onclick="nextResult()">➡</button>
-
-<span id="resultInfo"></span>
+<div id="controls">
+  <button onclick="prevPage()">⬅ Pagina</button>
+  <button onclick="nextPage()">Pagina ➡</button>
+  <span id="pageInfo"></span>
 </div>
 
-</div>
-
-<div id="layout">
-<div id="sidebar"></div>
 <div id="pdf-container">
   <div id="pdf-page"></div>
-</div>
 </div>
 
 <script>
 const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
-let pdfDoc=null,currentPage=1,scale=1.5;
-let results=[],currentIndex=0,searchTerm="";
+let pdfDoc=null, currentPage=1, scale=1.5;
 
 async function renderPage(num){
   const page = await pdfDoc.getPage(num);
@@ -85,157 +60,61 @@ async function renderPage(num){
   const canvas = document.createElement("canvas");
   container.appendChild(canvas);
   const ctx = canvas.getContext("2d");
-
   const viewport = page.getViewport({ scale });
   canvas.width = viewport.width;
   canvas.height = viewport.height;
 
   await page.render({ canvasContext: ctx, viewport }).promise;
 
-  // ===== LAYER LINK =====
+  // ===== LINK LAYER =====
+  const annotations = await page.getAnnotations();
   const linkLayer = document.createElement("div");
   linkLayer.style.position = "absolute";
   linkLayer.style.top = 0;
   linkLayer.style.left = 0;
   linkLayer.style.width = viewport.width + "px";
   linkLayer.style.height = viewport.height + "px";
-  linkLayer.style.zIndex = 20;
+  linkLayer.style.zIndex = "20";
   container.appendChild(linkLayer);
-
-  const annotations = await page.getAnnotations();
 
   for (const annotation of annotations) {
     if (annotation.subtype !== "Link") continue;
-
-    const rect = annotation.rect;
-
-    // Trasformazione coordinate PDF -> Canvas (STESSO METODO DEL TESTO)
-    const transform = pdfjsLib.Util.transform(
-      viewport.transform,
-      [1, 0, 0, 1, rect[0], rect[1]]
-    );
-
-    const transform2 = pdfjsLib.Util.transform(
-      viewport.transform,
-      [1, 0, 0, 1, rect[2], rect[3]]
-    );
-
-    const left = transform[4] -4;
-    const top = transform2[5] - 8; // oppure -2
-    const width = transform2[4] - transform[4];
-    const height = transform[5] - transform2[5];
+    const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
+    const [x1, y1, x2, y2] = viewport.convertToViewportRectangle(rect);
+    const left = Math.min(x1,x2), top = Math.min(y1,y2);
+    const width = Math.abs(x2-x1), height = Math.abs(y2-y1);
 
     const link = document.createElement("a");
-    link.style.position = "absolute";
     link.style.left = left + "px";
     link.style.top = top + "px";
     link.style.width = width + "px";
     link.style.height = height + "px";
-    link.style.background = "rgba(255,255,0,0.25)"; // evidenzia link
+    link.style.position = "absolute";
     link.style.cursor = "pointer";
 
-    // Link esterno
-    if (annotation.url) {
+    // DEBUG: rettangolo rosso
+    link.classList.add("link-debug");
+
+    if(annotation.url){
       link.href = annotation.url;
       link.target = "_blank";
-    }
-    // Link interno
-    else if (annotation.dest) {
-      link.href = "#";
-      link.onclick = async (e) => {
-        e.preventDefault();
-        let dest = annotation.dest;
-        if (typeof dest === "string") {
-          dest = await pdfDoc.getDestination(dest);
-        }
-        if (Array.isArray(dest)) {
-          const pageRef = dest[0];
-          const pageIndex = await pdfDoc.getPageIndex(pageRef);
-          goToPage(pageIndex + 1);
-        }
-      };
     }
 
     linkLayer.appendChild(link);
   }
 
-  highlight(page, viewport);
-
-  document.getElementById("resultInfo").innerText =
-    `Pagina ${currentPage} / ${pdfDoc.numPages}`;
+  document.getElementById("pageInfo").innerText = `Pagina ${currentPage} / ${pdfDoc.numPages}`;
 }
 
-// PAGINE
-function nextPage(){if(currentPage<pdfDoc.numPages){currentPage++;renderPage(currentPage);}}
-function prevPage(){if(currentPage>1){currentPage--;renderPage(currentPage);}}
-function goToPage(p){if(p>=1 && p<=pdfDoc.numPages){currentPage=p;renderPage(p);}}
+// ==== PAGINA PRECEDENTE/SUCCESSIVA
+function nextPage(){ if(currentPage < pdfDoc.numPages){ currentPage++; renderPage(currentPage); } }
+function prevPage(){ if(currentPage > 1){ currentPage--; renderPage(currentPage); } }
 
-// RICERCA
-async function searchText(){
-  searchTerm=document.getElementById("searchText").value.toLowerCase();
-  results=[];
-  for(let i=1;i<=pdfDoc.numPages;i++){
-    const page=await pdfDoc.getPage(i);
-    const text=await page.getTextContent();
-    const str=text.items.map(i=>i.str).join(" ").toLowerCase();
-    if(str.includes(searchTerm)) results.push(i);
-  }
-  buildSidebar();
-  if(results.length){currentIndex=0;goToResult(0);}
-}
-
-function buildSidebar(){
-  const sb=document.getElementById("sidebar");
-  sb.innerHTML="";
-  results.forEach((p,i)=>{
-    const div=document.createElement("div");
-    div.className="result";
-    div.innerText="Pagina "+p;
-    div.onclick=()=>goToResult(i);
-    sb.appendChild(div);
-  });
-  document.getElementById("resultInfo").innerText=results.length?`1 / ${results.length}`:"0";
-}
-
-function goToResult(i){
-  currentIndex=i;
-  goToPage(results[i]);
-  document.getElementById("resultInfo").innerText=(i+1)+" / "+results.length;
-}
-
-function nextResult(){if(!results.length) return; currentIndex=(currentIndex+1)%results.length; goToResult(currentIndex);}
-function prevResult(){if(!results.length) return; currentIndex=(currentIndex-1+results.length)%results.length; goToResult(currentIndex);}
-
-// HIGHLIGHT RICERCA
-function highlight(page,viewport){
-  if(!searchTerm) return;
-  page.getTextContent().then(textContent=>{
-    const ctx=document.querySelector("canvas").getContext("2d");
-    textContent.items.forEach(item=>{
-      if(item.str.toLowerCase().includes(searchTerm)){
-        const tx=pdfjsLib.Util.transform(viewport.transform,item.transform);
-        ctx.fillStyle="rgba(255,255,0,0.3)";
-        ctx.fillRect(tx[4],tx[5]-10,item.width*scale,15);
-      }
-    });
-  });
-}
-
-// LOAD PDF
+// ==== LOAD PDF
 pdfjsLib.getDocument(url).promise.then(pdf=>{
-  pdfDoc=pdf;
+  pdfDoc = pdf;
   renderPage(currentPage);
 });
-
-// SWIPE MOBILE
-let touchStartY=0;
-document.getElementById("pdf-container").addEventListener("touchstart",e=>{touchStartY=e.touches[0].clientY;});
-document.getElementById("pdf-container").addEventListener("touchend",e=>{
-  const touchEndY=e.changedTouches[0].clientY;
-  if(touchStartY-touchEndY>50) nextPage();
-  if(touchEndY-touchStartY>50) prevPage();
-});
 </script>
-
 </body>
 </html>
