@@ -113,7 +113,11 @@ canvas {
   position:absolute;
   cursor:pointer;
 }
-
+#pdf-page {
+  position: relative;
+  line-height: 0;
+  font-size: 0;
+}
 /* MENU */
 .menu {
   position:absolute;
@@ -138,7 +142,7 @@ canvas {
 <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
 <button onclick="goToPage(22)">Mappa Ospedali_(Bo)</button>
 <button onclick="goToPage(30)">Ospedali Spc</button>
-<button onclick="goToPage(32)">Reparti H (Mo)</button>
+<button onclick="goToPage(32)">Reparti H_(Mo)</button>
 <button onclick="goToPage(45)">Reparti H_(Bo)</button>
 <button onclick="goToPage(76)">Reparti S_(Mo)</button>
 </div>
@@ -219,32 +223,33 @@ async function renderPage(num) {
 
   container.appendChild(linkLayer);
 
-  const linkViewport = viewport.clone({ dontFlip: true });
-
   for (const annotation of annotations) {
     if (annotation.subtype !== "Link") continue;
 
     const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
-    const [x1, y1, x2, y2] = linkViewport.convertToViewportRectangle(rect);
+    const [x1, y1, x2, y2] = viewport.convertToViewportRectangle(rect);
 
     const link = document.createElement("a");
+
+    const left = Math.min(x1, x2);
+    const top = Math.min(y1, y2);
+    const width = Math.abs(x2 - x1);
+    const height = Math.abs(y2 - y1);
+
     link.style.position = "absolute";
-    link.style.left = Math.min(x1, x2) + "px";
-    link.style.top = Math.min(y1, y2) + "px";
-    link.style.width = Math.abs(x2 - x1) + "px";
-    link.style.height = Math.abs(y2 - y1) + "px";
+    link.style.left = left + "px";
+    link.style.top = top + "px";
+    link.style.width = width + "px";
+    link.style.height = height + "px";
     link.style.cursor = "pointer";
 
     // DEBUG
     // link.style.background = "rgba(255,0,0,0.2)";
 
-    /* ===== LINK ESTERNO ===== */
     if (annotation.url) {
       link.href = annotation.url;
       link.target = "_blank";
     }
-
-    /* ===== LINK INTERNO PDF ===== */
     else if (annotation.dest) {
       link.href = "#";
       link.onclick = async (e) => {
@@ -269,7 +274,6 @@ async function renderPage(num) {
 
   highlight(page, viewport);
 }
-
 /* PAGINE */
 function nextPage(){
 if(currentPage<pdfDoc.numPages){
