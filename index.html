@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>PDF Viewer PRO</title>
+<title>4PDF Viewer PRO</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
@@ -135,6 +135,19 @@ canvas {
 .result-item:hover {
   background:#eee;
 }
+.controls-row {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:20px;
+  flex-wrap:wrap;
+}
+
+.group {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
 </style>
 </head>
 
@@ -146,16 +159,18 @@ canvas {
   <button onclick="goToPage(13)">Autostrada A1</button>
 </div>
 
-<div id="controls">
+<div id="controls" class="controls-row">
 
-<div id="searchBox">
-  <input type="text" id="searchText" placeholder="Cerca...">
-  <button onclick="searchText()">Cerca</button>
-</div>
+  <div class="group">
+    <input type="text" id="searchText" placeholder="Cerca...">
+    <button onclick="searchText()">Cerca</button>
+  </div>
 
-<button onclick="prevPage()">⬅</button>
-<button onclick="nextPage()">➡</button>
-<span id="pageInfo"></span>
+  <div class="group">
+    <button onclick="prevPage()">⬅</button>
+    <button onclick="nextPage()">➡</button>
+    <span id="pageInfo"></span>
+  </div>
 
 </div> <!-- ✅ CHIUSURA FIX -->
 
