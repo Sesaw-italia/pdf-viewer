@@ -184,46 +184,45 @@ let pdfDoc=null,currentPage=1,scale=1.5,rotation=0;
 let results=[],currentIndex=0,searchTerm="";
 
 /* RENDER PAGINA CON LINK FUNZIONANTI */
-async function renderPage(num){
-const page = await pdfDoc.getPage(num);
+async function renderPage(num) {
+  const page = await pdfDoc.getPage(num);
 
-const container = document.getElementById("pdf-page");
-container.innerHTML = "";
-container.style.position = "relative";
-container.style.lineHeight = "0";
+  const container = document.getElementById("pdf-page");
+  container.innerHTML = "";
+  container.style.position = "relative";
+  container.style.lineHeight = "0";
 
-const canvas = document.createElement("canvas");
-container.appendChild(canvas);
+  const canvas = document.createElement("canvas");
+  container.appendChild(canvas);
 
-const ctx = canvas.getContext("2d");
-const viewport = page.getViewport({ scale, rotation });
+  const ctx = canvas.getContext("2d");
+  const viewport = page.getViewport({ scale, rotation });
 
-canvas.width = viewport.width;
-canvas.height = viewport.height;
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
 
-await page.render({
-  canvasContext: ctx,
-  viewport: viewport
-}).promise;
+  await page.render({
+    canvasContext: ctx,
+    viewport: viewport
+  }).promise;
 
-/* ===== LAYER LINK ===== */
-const annotations = await page.getAnnotations();
+  /* ===== LINK LAYER ===== */
+  const annotations = await page.getAnnotations();
+  const linkLayer = document.createElement("div");
 
-const linkLayer = document.createElement("div");
-linkLayer.style.position = "absolute";
-linkLayer.style.top = "0px";
-linkLayer.style.left = "0px";
-linkLayer.style.width = viewport.width + "px";
-linkLayer.style.height = viewport.height + "px";
-linkLayer.style.zIndex = "10";
+  linkLayer.style.position = "absolute";
+  linkLayer.style.top = "0";
+  linkLayer.style.left = "0";
+  linkLayer.style.width = viewport.width + "px";
+  linkLayer.style.height = viewport.height + "px";
+  linkLayer.style.zIndex = "20";
 
-container.appendChild(linkLayer);
+  container.appendChild(linkLayer);
 
-/* viewport corretto per le annotations */
-const linkViewport = viewport.clone({ dontFlip: true });
+  const linkViewport = viewport.clone({ dontFlip: true });
 
-annotations.forEach(annotation => {
-  if (annotation.subtype === "Link") {
+  for (const annotation of annotations) {
+    if (annotation.subtype !== "Link") continue;
 
     const rect = pdfjsLib.Util.normalizeRect(annotation.rect);
     const [x1, y1, x2, y2] = linkViewport.convertToViewportRectangle(rect);
@@ -234,34 +233,41 @@ annotations.forEach(annotation => {
     link.style.top = Math.min(y1, y2) + "px";
     link.style.width = Math.abs(x2 - x1) + "px";
     link.style.height = Math.abs(y2 - y1) + "px";
+    link.style.cursor = "pointer";
 
-    /* DEBUG rettangoli link */
+    // DEBUG
     // link.style.background = "rgba(255,0,0,0.2)";
 
-    /* LINK ESTERNI */
+    /* ===== LINK ESTERNO ===== */
     if (annotation.url) {
       link.href = annotation.url;
       link.target = "_blank";
     }
 
-    /* LINK INTERNI PDF */
-    if (annotation.dest) {
+    /* ===== LINK INTERNO PDF ===== */
+    else if (annotation.dest) {
       link.href = "#";
       link.onclick = async (e) => {
         e.preventDefault();
-        const dest = await pdfDoc.getDestination(annotation.dest);
-        const pageRef = dest[0];
-        const pageIndex = await pdfDoc.getPageIndex(pageRef);
-        goToPage(pageIndex + 1);
+
+        let dest = annotation.dest;
+
+        if (typeof dest === "string") {
+          dest = await pdfDoc.getDestination(dest);
+        }
+
+        if (Array.isArray(dest)) {
+          const pageRef = dest[0];
+          const pageIndex = await pdfDoc.getPageIndex(pageRef);
+          goToPage(pageIndex + 1);
+        }
       };
     }
 
     linkLayer.appendChild(link);
   }
-});
 
-/* evidenzia ricerca */
-highlight(page, viewport);
+  highlight(page, viewport);
 }
 
 /* PAGINE */
