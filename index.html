@@ -7,24 +7,43 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
-body { margin:0; font-family:Arial; background:#eef1f5; }
+body {
+  margin:0;
+  font-family:Arial;
+  background:#eef1f5;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 
+/* 🔝 TOPBAR CENTRATA */
 .topbar {
   background:#1e1e2f;
   padding:10px;
   display:flex;
   flex-direction:column;
   gap:8px;
+  width:95%;
+  max-width:1200px;
+  border-radius:15px;
+  margin-top:10px;
 }
 
-.row { display:flex; gap:8px; flex-wrap:wrap; }
+.row {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
 
+/* 🔵 TUOI */
 .primary button {
   background:#4a90e2;
   color:white;
   font-weight:bold;
 }
 
+/* ⚙️ CONTROLLI */
 .secondary button { background:white; }
 
 button,input {
@@ -33,16 +52,20 @@ button,input {
   border-radius:20px;
 }
 
+/* 📄 LAYOUT CENTRATO */
 #layout {
   display:flex;
-  height:90vh;
+  width:95%;
+  max-width:1200px;
+  height:85vh;
+  margin-top:10px;
 }
 
 #sidebar {
-  width:220px;
+  width:200px;
   background:#fff;
   overflow:auto;
-  border-right:1px solid #ddd;
+  border-radius:10px 0 0 10px;
   padding:10px;
 }
 
@@ -51,7 +74,6 @@ button,input {
   cursor:pointer;
   border-radius:8px;
 }
-
 .result:hover { background:#eee; }
 
 #pdf-container {
@@ -59,6 +81,8 @@ button,input {
   display:flex;
   justify-content:center;
   align-items:center;
+  background:white;
+  border-radius:0 10px 10px 0;
 }
 
 canvas {
@@ -66,10 +90,11 @@ canvas {
   box-shadow:0 5px 20px rgba(0,0,0,0.2);
 }
 
+/* MENU */
 .menu {
   position:absolute;
-  top:90px;
-  right:20px;
+  top:100px;
+  right:50px;
   background:white;
   border-radius:10px;
   padding:10px;
@@ -84,17 +109,16 @@ canvas {
 
 <div class="row primary">
 <button onclick="goToPage(1)">Inizio</button>
-  <button onclick="goToPage(6)">Elisuperficie</button>
-  <button onclick="goToPage(13)">Autostrada A1</button>
-  <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-  <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
-  <button onclick="goToPage(30)">Ospedali Spc</button>
-  <button onclick="goToPage(32)">Reparti H_(Mo)</button>
-  <button onclick="goToPage(45)">Reparti H (Bo)</button>
-  <button onclick="goToPage(76)">Reparti S (Mo)</button>
+<button onclick="goToPage(6)">Elisuperficie</button>
+<button onclick="goToPage(13)">Autostrada A1</button>
+<button onclick="goToPage(14)">Mappa Ospedali</button>
 </div>
 
 <div class="row secondary">
+
+<!-- ⬅️➡️ PAGINE -->
+<button onclick="prevPage()">⬅️ Pagina</button>
+<button onclick="nextPage()">➡️ Pagina</button>
 
 <input type="text" id="searchText" placeholder="Cerca...">
 <button onclick="searchText()">Cerca</button>
@@ -127,41 +151,52 @@ canvas {
 </div>
 
 <script>
-const url = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
+const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 
-let pdfDoc=null, currentPage=1, scale=1.5, rotation=0;
-
-let results=[];
-let currentIndex=0;
-let searchTerm="";
+let pdfDoc=null,currentPage=1,scale=1.5,rotation=0;
+let results=[],currentIndex=0,searchTerm="";
 
 function renderPage(num){
 pdfDoc.getPage(num).then(page=>{
 const canvas=document.getElementById("pdf");
 const ctx=canvas.getContext("2d");
 
-const viewport=page.getViewport({scale, rotation});
+const viewport=page.getViewport({scale,rotation});
 canvas.height=viewport.height;
 canvas.width=viewport.width;
 
-page.render({canvasContext:ctx, viewport}).promise.then(()=>{
-highlight(page, viewport);
+page.render({canvasContext:ctx,viewport}).promise.then(()=>{
+highlight(page,viewport);
 });
 });
 }
 
-function highlight(page, viewport){
-if(!searchTerm) return;
+/* ⬅️➡️ PAGINE */
+function nextPage(){
+if(currentPage<pdfDoc.numPages){
+currentPage++;
+renderPage(currentPage);
+}
+}
+
+function prevPage(){
+if(currentPage>1){
+currentPage--;
+renderPage(currentPage);
+}
+}
+
+function highlight(page,viewport){
+if(!searchTerm)return;
 
 page.getTextContent().then(textContent=>{
 const ctx=document.getElementById("pdf").getContext("2d");
 
 textContent.items.forEach(item=>{
 if(item.str.toLowerCase().includes(searchTerm)){
-const tx=pdfjsLib.Util.transform(viewport.transform, item.transform);
-
+const tx=pdfjsLib.Util.transform(viewport.transform,item.transform);
 ctx.fillStyle="rgba(255,255,0,0.4)";
-ctx.fillRect(tx[4], tx[5]-10, item.width*scale, 15);
+ctx.fillRect(tx[4],tx[5]-10,item.width*scale,15);
 }
 });
 });
@@ -173,11 +208,11 @@ currentPage=p;
 renderPage(p);
 }
 
-function zoomIn(){ scale+=0.3; renderPage(currentPage); }
-function zoomOut(){ scale=Math.max(0.5, scale-0.3); renderPage(currentPage); }
+function zoomIn(){scale+=0.3;renderPage(currentPage);}
+function zoomOut(){scale=Math.max(0.5,scale-0.3);renderPage(currentPage);}
 
-function rotate(d){ rotation+=d; renderPage(currentPage); }
-function resetView(){ scale=1.5; rotation=0; renderPage(currentPage); }
+function rotate(d){rotation+=d;renderPage(currentPage);}
+function resetView(){scale=1.5;rotation=0;renderPage(currentPage);}
 
 function toggleMenu(){
 const m=document.getElementById("menu");
@@ -193,7 +228,7 @@ const page=await pdfDoc.getPage(i);
 const text=await page.getTextContent();
 const str=text.items.map(i=>i.str).join(" ").toLowerCase();
 
-if(str.includes(searchTerm)) results.push(i);
+if(str.includes(searchTerm))results.push(i);
 }
 
 buildSidebar();
@@ -217,7 +252,7 @@ sb.appendChild(div);
 });
 
 document.getElementById("resultInfo").innerText=
-results.length ? `1 / ${results.length}` : "0";
+results.length?`1 / ${results.length}`:"0";
 }
 
 function goToResult(i){
