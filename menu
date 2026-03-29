@@ -2,62 +2,126 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>PDF Viewer PRO</title>
+<title>PDF Viewer Completo</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
 
 <style>
 body {
   margin:0;
-  font-family: Arial, sans-serif;
-  background: #eef1f5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  font-family:Arial;
+  background:#eef1f5;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
 }
 
 .topbar {
-  background: #1e1e2f;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 95%;
-  max-width: 1200px;
-  border-radius: 15px;
-  margin-top: 10px;
+  background:#1e1e2f;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  width:95%;
+  max-width:1200px;
+  border-radius:15px;
+  margin-top:10px;
 }
 
 .row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:center;
 }
 
 .primary button {
-  background: #4a90e2;
-  color: white;
-  font-weight: bold;
+  background:#4a90e2;
+  color:white;
+  font-weight:bold;
 }
 
-.secondary button {
-  background: white;
-  color: black;
+.secondary button { background:white; }
+
+button,input {
+  padding:6px 12px;
+  border:none;
+  border-radius:20px;
+  cursor:pointer;
 }
 
-button, input {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
+/* LAYOUT */
+#layout {
+  display:flex;
+  width:95%;
+  max-width:1200px;
+  height:85vh;
+  margin-top:10px;
 }
 
-iframe {
-  width: 95%;
-  max-width: 1200px;
-  height: 85vh;
-  border: none;
-  margin-top: 10px;
-  border-radius: 10px;
+#sidebar {
+  width:200px;
+  background:#fff;
+  overflow:auto;
+  border-radius:10px 0 0 10px;
+  padding:10px;
+}
+
+.result {
+  padding:6px;
+  cursor:pointer;
+  border-radius:8px;
+}
+.result:hover { background:#eee; }
+
+#pdf-container {
+  flex:1;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:white;
+  border-radius:0 10px 10px 0;
+  overflow:auto;
+}
+
+#pdf-page {
+  position: relative;
+  line-height:0;
+  font-size:0;
+}
+
+canvas {
+  display:block;
+  max-width:100%;
+}
+
+.annotationLayer {
+  position:absolute;
+  top:0;
+  left:0;
+  z-index:5;
+}
+
+.annotationLayer a {
+  position:absolute;
+  cursor:pointer;
+}
+
+.menu {
+  position:absolute;
+  top:100px;
+  right:50px;
+  background:white;
+  border-radius:10px;
+  padding:10px;
+  display:none;
 }
 </style>
 </head>
@@ -66,83 +130,204 @@ iframe {
 
 <div class="topbar">
 
-  <div class="row primary">
-    <button onclick="goToPage(1)">Inizio</button>
-    <button onclick="goToPage(6)">Elisuperficie</button>
-    <button onclick="goToPage(13)">Autostrada A1</button>
-    <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-    <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
-    <button onclick="goToPage(30)">Ospedali Spc</button>
-    <button onclick="goToPage(32)">Reparti H (Mo)</button>
-    <button onclick="goToPage(45)">Reparti H (Bo)</button>
-    <button onclick="goToPage(76)">Reparti S (Mo)</button>
-  </div>
+<div class="row primary">
+<button onclick="goToPage(1)">Inizio</button>
+<button onclick="goToPage(6)">Elisuperficie</button>
+<button onclick="goToPage(13)">Autostrada A1</button>
+<button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
+<button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
+<button onclick="goToPage(30)">Ospedali Spc</button>
+<button onclick="goToPage(32)">Reparti H (Mo)</button>
+<button onclick="goToPage(45)">Reparti H (Bo)</button>
+<button onclick="goToPage(76)">Reparti S (Mo)</button>
+</div>
 
-  <div class="row secondary">
-    <button onclick="prevPage()">⬅️ Pagina</button>
-    <button onclick="nextPage()">➡️ Pagina</button>
+<div class="row secondary">
+<button onclick="prevPage()">⬅️ Pagina</button>
+<button onclick="nextPage()">➡️ Pagina</button>
 
-    <input type="text" id="searchText" placeholder="Cerca...">
-    <button onclick="searchText()">Cerca</button>
+<input type="text" id="searchText" placeholder="Cerca...">
+<button onclick="searchText()">Cerca</button>
 
-    <input type="number" id="gotoPageNum" placeholder="Vai a pagina" style="width: 100px;">
-    <button onclick="goToInputPage()">Vai</button>
+<button onclick="prevResult()">⬅</button>
+<button onclick="nextResult()">➡</button>
 
-    <button onclick="zoomIn()">＋</button>
-    <button onclick="zoomOut()">－</button>
+<span id="resultInfo"></span>
 
-    <button onclick="rotateRight()">↻</button>
-    <button onclick="rotateLeft()">↺</button>
-  </div>
+<button onclick="zoomIn()">＋</button>
+<button onclick="zoomOut()">－</button>
+
+<button onclick="toggleMenu()">⚙️</button>
+</div>
 
 </div>
 
-<iframe id="viewer"></iframe>
+<div id="menu" class="menu">
+<button onclick="rotate(90)">Ruota ➡️</button>
+<button onclick="rotate(-90)">Ruota ⬅️</button>
+<button onclick="resetView()">Reset</button>
+</div>
+
+<div id="layout">
+<div id="sidebar"></div>
+
+<div id="pdf-container">
+  <div id="pdf-page"></div>
+</div>
+</div>
 
 <script>
-const viewerBase = "https://mozilla.github.io/pdf.js/web/viewer.html";
-const pdfFile = "https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
+const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
+let pdfDoc=null,currentPage=1,scale=1.5,rotation=0;
+let results=[],currentIndex=0,searchTerm="";
 
-let currentPage = 1;
-let zoom = "page-width";
-let rotation = 0;
+/* RENDER PAGINA CON LINK */
+async function renderPage(num){
+  const page = await pdfDoc.getPage(num);
+  const container = document.getElementById("pdf-page");
+  container.innerHTML = "";
+  container.style.position="relative";
 
-// Imposta src iframe con pagina, zoom e rotazione
-function updateViewer() {
-  let url = `${viewerBase}?file=${encodeURIComponent(pdfFile)}#page=${currentPage}&zoom=${zoom}&toolbar=0`;
-  if (rotation !== 0) {
-    url += `&rotation=${rotation}`;
+  const canvas=document.createElement("canvas");
+  container.appendChild(canvas);
+  const ctx=canvas.getContext("2d");
+  const viewport=page.getViewport({scale,rotation});
+  canvas.width=viewport.width;
+  canvas.height=viewport.height;
+
+  await page.render({canvasContext:ctx,viewport}).promise;
+
+  // ===== LINK LAYER =====
+  const annotations=await page.getAnnotations();
+  const linkLayer=document.createElement("div");
+  linkLayer.style.position="absolute";
+  linkLayer.style.top=0;
+  linkLayer.style.left=0;
+  linkLayer.style.width=viewport.width+"px";
+  linkLayer.style.height=viewport.height+"px";
+  linkLayer.style.zIndex="20";
+  container.appendChild(linkLayer);
+
+  for(const annotation of annotations){
+    if(annotation.subtype!=="Link") continue;
+    const rect=pdfjsLib.Util.normalizeRect(annotation.rect);
+    const [x1,y1,x2,y2]=viewport.convertToViewportRectangle(rect);
+    const left=Math.min(x1,x2), top=Math.min(y1,y2);
+    const width=Math.abs(x2-x1), height=Math.abs(y2-y1);
+
+    const link=document.createElement("a");
+    link.style.left=left+"px";
+    link.style.top=top+"px";
+    link.style.width=width+"px";
+    link.style.height=height+"px";
+    link.style.position="absolute";
+    link.style.cursor="pointer";
+
+    if(annotation.url){
+      link.href=annotation.url;
+      link.target="_blank";
+    }
+
+    linkLayer.appendChild(link);
   }
-  document.getElementById("viewer").src = url;
+
+  highlight(page,viewport);
+  document.getElementById("resultInfo").innerText=`Pagina ${currentPage} / ${pdfDoc.numPages}`;
 }
 
-// Navigazione pagine
-function goToPage(p) { currentPage = p; updateViewer(); }
-function nextPage() { currentPage++; updateViewer(); }
-function prevPage() { if(currentPage>1){currentPage--; updateViewer();} }
-function goToInputPage() {
-  const input = parseInt(document.getElementById("gotoPageNum").value);
-  if (!isNaN(input)) goToPage(input);
+/* PAGINE */
+function nextPage(){if(currentPage<pdfDoc.numPages){currentPage++;renderPage(currentPage);}}
+function prevPage(){if(currentPage>1){currentPage--;renderPage(currentPage);}}
+function goToPage(p){if(p>=1 && p<=pdfDoc.numPages){currentPage=p;renderPage(p);}}
+
+/* ZOOM */
+function zoomIn(){scale+=0.3;renderPage(currentPage);}
+function zoomOut(){scale=Math.max(0.5,scale-0.3);renderPage(currentPage);}
+
+/* ROTAZIONE */
+function rotate(d){rotation+=d;renderPage(currentPage);}
+function resetView(){scale=1.5;rotation=0;renderPage(currentPage);}
+
+/* MENU */
+function toggleMenu(){
+  const m=document.getElementById("menu");
+  m.style.display=m.style.display==="block"?"none":"block";
 }
 
-// Zoom
-function zoomIn() { zoom = "page-width"; updateViewer(); } // puoi cambiare per scale precisi
-function zoomOut() { zoom = "page-fit"; updateViewer(); }
-
-// Rotazione
-function rotateRight() { rotation = (rotation + 90) % 360; updateViewer(); }
-function rotateLeft() { rotation = (rotation + 270) % 360; updateViewer(); }
-
-// Cerca testo (usa la funzione search interna del viewer)
-function searchText() {
-  const term = document.getElementById("searchText").value.trim();
-  if (!term) return;
-  const iframe = document.getElementById("viewer");
-  iframe.contentWindow.PDFViewerApplication?.findController.executeCommand("find", {query: term});
+/* RICERCA */
+async function searchText(){
+  searchTerm=document.getElementById("searchText").value.toLowerCase();
+  results=[];
+  for(let i=1;i<=pdfDoc.numPages;i++){
+    const page=await pdfDoc.getPage(i);
+    const text=await page.getTextContent();
+    const str=text.items.map(i=>i.str).join(" ").toLowerCase();
+    if(str.includes(searchTerm)) results.push(i);
+  }
+  buildSidebar();
+  if(results.length){currentIndex=0;goToResult(0);}
 }
 
-// Carica la pagina iniziale
-updateViewer();
+function buildSidebar(){
+  const sb=document.getElementById("sidebar");
+  sb.innerHTML="";
+  results.forEach((p,i)=>{
+    const div=document.createElement("div");
+    div.className="result";
+    div.innerText="Pagina "+p;
+    div.onclick=()=>goToResult(i);
+    sb.appendChild(div);
+  });
+  document.getElementById("resultInfo").innerText=results.length?`1 / ${results.length}`:"0";
+}
+
+function goToResult(i){
+  currentIndex=i;
+  goToPage(results[i]);
+  document.getElementById("resultInfo").innerText=(i+1)+" / "+results.length;
+}
+
+function nextResult(){
+  if(!results.length) return;
+  currentIndex=(currentIndex+1)%results.length;
+  goToResult(currentIndex);
+}
+
+function prevResult(){
+  if(!results.length) return;
+  currentIndex=(currentIndex-1+results.length)%results.length;
+  goToResult(currentIndex);
+}
+
+/* HIGHLIGHT */
+function highlight(page,viewport){
+  if(!searchTerm) return;
+  page.getTextContent().then(textContent=>{
+    const ctx=document.querySelector("canvas").getContext("2d");
+    textContent.items.forEach(item=>{
+      if(item.str.toLowerCase().includes(searchTerm)){
+        const tx=pdfjsLib.Util.transform(viewport.transform,item.transform);
+        ctx.fillStyle="rgba(255,255,0,0.3)";
+        ctx.fillRect(tx[4],tx[5]-10,item.width*scale,15);
+      }
+    });
+  });
+}
+
+/* LOAD PDF */
+pdfjsLib.getDocument(url).promise.then(pdf=>{
+  pdfDoc=pdf;
+  renderPage(1);
+});
+
+/* SWIPE MOBILE */
+let touchStartY=0;
+document.getElementById("pdf-container").addEventListener("touchstart",e=>{touchStartY=e.touches[0].clientY;});
+document.getElementById("pdf-container").addEventListener("touchend",e=>{
+  const touchEndY=e.changedTouches[0].clientY;
+  if(touchStartY-touchEndY>50) nextPage();
+  if(touchEndY-touchStartY>50) prevPage();
+});
 </script>
 
 </body>
