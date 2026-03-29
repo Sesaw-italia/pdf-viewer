@@ -4,9 +4,14 @@
 <meta charset="UTF-8">
 <title>Viewer PDF PRO</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js">
+<!-- ✅ PDF.js corretto -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 </script>
 
 <style>
@@ -121,14 +126,14 @@ canvas {
 
 <div class="row primary">
 <button onclick="goToPage(1)">Inizio</button>
-  <button onclick="goToPage(6)">Elisuperficie</button>
-  <button onclick="goToPage(13)">Autostrada A1</button>
-  <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-  <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
-  <button onclick="goToPage(30)">Ospedali Spc</button>
-  <button onclick="goToPage(32)">Reparti H_(Mo)</button>
-  <button onclick="goToPage(45)">Reparti H_(Bo)</button>
-  <button onclick="goToPage(76)">Reparti S (Mo)</button>
+<button onclick="goToPage(6)">Elisuperficie</button>
+<button onclick="goToPage(13)">Autostrada A1</button>
+<button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
+<button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
+<button onclick="goToPage(30)">Ospedali Spc</button>
+<button onclick="goToPage(32)">Reparti H_(Mo)</button>
+<button onclick="goToPage(45)">Reparti H_(Bo)</button>
+<button onclick="goToPage(76)">Reparti S (Mo)</button>
 </div>
 
 <div class="row secondary">
@@ -163,7 +168,6 @@ canvas {
 <div id="pdf-container">
   <div id="pdf-page"></div>
 </div>
-
 </div>
 
 <script>
@@ -172,7 +176,7 @@ const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
 let pdfDoc=null,currentPage=1,scale=1.5,rotation=0;
 let results=[],currentIndex=0,searchTerm="";
 
-/* 🔥 RENDER CON LINK */
+/* 🔥 RENDER CON LINK FUNZIONANTI */
 function renderPage(num){
 pdfDoc.getPage(num).then(page=>{
 
@@ -191,16 +195,14 @@ canvas.width=viewport.width;
 
 page.render({canvasContext:ctx,viewport}).promise.then(()=>{
 
-/* ✅ LINK CLICCABILI */
-const annotationLayerDiv = document.createElement("div");
-annotationLayerDiv.className = "annotationLayer";
-container.appendChild(annotationLayerDiv);
+/* ✅ LINK REALMENTE FUNZIONANTI */
+const linkService = new pdfjsViewer.SimpleLinkService();
 
 const annotationLayer = new pdfjsViewer.AnnotationLayerBuilder({
   pageDiv: container,
   pdfPage: page,
   viewport: viewport,
-  linkService: new pdfjsViewer.SimpleLinkService(),
+  linkService: linkService,
 });
 
 annotationLayer.render(viewport);
@@ -304,7 +306,7 @@ currentIndex=(currentIndex-1+results.length)%results.length;
 goToResult(currentIndex);
 }
 
-/* HIGHLIGHT BASE */
+/* HIGHLIGHT */
 function highlight(page,viewport){
 if(!searchTerm)return;
 
@@ -325,58 +327,6 @@ ctx.fillRect(tx[4],tx[5]-10,item.width*scale,15);
 pdfjsLib.getDocument(url).promise.then(pdf=>{
 pdfDoc=pdf;
 renderPage(1);
-});
-// 🖱️ SCROLL MOUSE (cambia pagina)
-let scrollTimeout = null;
-
-document.getElementById("pdf-container").addEventListener("wheel", (e) => {
-  e.preventDefault();
-
-  if (scrollTimeout) return;
-
-  if (e.deltaY > 0) {
-    nextPage();
-  } else {
-    prevPage();
-  }
-
-  // evita cambi troppo veloci
-  scrollTimeout = setTimeout(() => {
-    scrollTimeout = null;
-  }, 400);
-}, { passive: false });
-
-
-// ⌨️ TASTIERA
-document.addEventListener("keydown", (e) => {
-
-  if (e.key === "ArrowRight" || e.key === "PageDown") {
-    nextPage();
-  }
-
-  if (e.key === "ArrowLeft" || e.key === "PageUp") {
-    prevPage();
-  }
-
-});
-
-// 📱 SWIPE MOBILE
-let touchStartY = 0;
-
-document.getElementById("pdf-container").addEventListener("touchstart", (e) => {
-  touchStartY = e.touches[0].clientY;
-});
-
-document.getElementById("pdf-container").addEventListener("touchend", (e) => {
-  let touchEndY = e.changedTouches[0].clientY;
-
-  if (touchStartY - touchEndY > 50) {
-    nextPage(); // swipe su
-  }
-
-  if (touchEndY - touchStartY > 50) {
-    prevPage(); // swipe giù
-  }
 });
 </script>
 
