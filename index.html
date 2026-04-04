@@ -1,321 +1,91 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<title>PDF mappa Ospedali PAV by Gianluca</title>
+  <meta charset="UTF-8">
+  <title>Popup Accetta o Rifiuta</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    /* Sfondo scuro */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
 
-<script>
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-</script>
+    /* Popup */
+    .popup {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
 
-<style>
-body {
-  margin:0;
-  font-family:Arial;
-  background:#eef1f5;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
+    .popup h2 {
+      margin-bottom: 15px;
+    }
 
-/* TOPBAR */
-.topbar {
-  background:#222;
-  padding:10px;
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  border-radius:15px;
-  margin-top:10px;
-  width:95%;
-  max-width:1200px;
-}
+    .popup p {
+      margin-bottom: 25px;
+    }
 
-.topbar button {
-  margin:5px;
-  padding:8px 12px;
-  border:none;
-  background:#4a90e2;
-  color:white;
-  border-radius:20px;
-  cursor:pointer;
-}
+    .btn {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
 
-/* CONTROLLI */
-#controls {
-  margin:10px;
-}
+    .accept {
+      background-color: #28a745;
+      color: white;
+    }
 
-/* PDF */
-#pdf-container {
-  width:95%;
-  max-width:1200px;
-  height:85vh;
-  background:white;
-  border-radius:10px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  overflow:hidden;
-  position:relative;
-}
-
-/* animazione */
-.fade {
-  animation: fadeIn 0.3s;
-}
-@keyframes fadeIn {
-  from {opacity:0; transform:scale(0.98);}
-  to {opacity:1; transform:scale(1);}
-}
-
-#pdf-page {
-  position:relative;
-}
-
-canvas {
-  max-width:100%;
-  display:block;
-}
-
-/* LINK */
-.linkLayer {
-  position:absolute;
-  top:0;
-  left:0;
-  z-index:1000;
-}
-
-.linkLayer a {
-  position:absolute;
-  cursor:pointer;
-}
-
-.linkLayer a:hover {
-  background:rgba(0,150,255,0.2);
-}
-
-/* SIDEBAR */
-.sidebar {
-  position:absolute;
-  left:0;
-  top:0;
-  width:250px;
-  height:100%;
-  background:white;
-  border-radius:10px 0 0 10px;
-  box-shadow:2px 0 10px rgba(0,0,0,0.1);
-  display:none;
-  flex-direction:column;
-  z-index:2000;
-}
-
-.sidebar-header {
-  display:flex;
-  justify-content:space-between;
-  padding:10px;
-  background:#4a90e2;
-  color:white;
-}
-
-#results {
-  overflow:auto;
-  padding:10px;
-  flex:1;
-}
-
-.result-item {
-  padding:6px;
-  cursor:pointer;
-}
-
-.result-item:hover {
-  background:#eee;
-}
-.controls-row {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:20px;
-  flex-wrap:wrap;
-}
-
-.group {
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-</style>
+    .reject {
+      background-color: #dc3545;
+      color: white;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="topbar">
-  <button onclick="goToPage(1)">Inizio</button>
-  <button onclick="goToPage(6)">Elisuperficie</button>
-  <button onclick="goToPage(13)">Autostrada A1</button>
-  <button onclick="goToPage(14)">Mappa Ospedali (Mo)</button>
-  <button onclick="goToPage(22)">Mappa Ospedali (Bo)</button>
-  <button onclick="goToPage(30)">Ospedali Spc</button>
-  <button onclick="goToPage(32)">Reparti H (Mo)</button>
-  <button onclick="goToPage(45)">Reparti H (Bo)</button>
-  <button onclick="goToPage(76)">Reparti S (Mo)</button>
-</div>
-
-<div id="controls" class="controls-row">
-
-  <div class="group">
-    <input type="text" id="searchText" placeholder="Cerca...">
-    <button onclick="searchText()">Cerca</button>
+<div class="overlay" id="popup">
+  <div class="popup">
+    <h2>AVVISO IMPORTANTE – ESCLUSIONE DI RESPONSABILITÀ</h2>
+    <p>Le informazioni contenute in questo documento sono fornite a scopo didattico e informativo e potrebbero non essere aggiornate o contenere errori.
+Si invita a verificare sempre tramite fonti ufficiali.
+L’autore declina ogni responsabilità per eventuali errori, omissioni o per l’uso delle informazioni.
+Documento riservato: vietata la riproduzione e la divulgazione senza autorizzazione. Ultimo aggiornamento 16/03/2026</p>
+    <button class="btn accept" onclick="acceptAction()">Prosegui</button>
+    <button class="btn reject" onclick="rejectAction()">Rifiuta</button>
   </div>
-
-  <div class="group">
-    <button onclick="prevPage()">⬅</button>
-    <button onclick="nextPage()">➡</button>
-    <span id="pageInfo"></span>
-  </div>
-
-</div> <!-- ✅ CHIUSURA FIX -->
-
-<!-- PDF -->
-<div id="pdf-container">
-
-  <!-- SIDEBAR -->
-  <div id="sidebar" class="sidebar">
-    <div class="sidebar-header">
-      <span>Risultati</span>
-      <button onclick="closeSidebar()">✖</button>
-    </div>
-    <div id="results"></div>
-  </div>
-
-  <div id="pdf-page"></div>
 </div>
 
 <script>
-const url="https://sesaw-italia.github.io/pdf-viewer/documento.pdf";
+  function acceptAction() {
+    window.location.href = "https://swesinfoservice.wixsite.com/sesaw/flipbook-mappe-reparti-mo-bo";
+  }
 
-let pdfDoc=null,currentPage=1,scale=1.5;
-let results=[],searchTerm="";
-
-async function renderPage(num){
-const page=await pdfDoc.getPage(num);
-
-const container=document.getElementById("pdf-page");
-container.innerHTML="";
-
-const canvas=document.createElement("canvas");
-container.appendChild(canvas);
-
-const ctx=canvas.getContext("2d");
-const viewport=page.getViewport({scale});
-
-canvas.width=viewport.width;
-canvas.height=viewport.height;
-
-await page.render({canvasContext:ctx,viewport}).promise;
-
-/* LINK */
-const annotations=await page.getAnnotations();
-const layer=document.createElement("div");
-layer.className="linkLayer";
-layer.style.width=viewport.width+"px";
-layer.style.height=viewport.height+"px";
-
-container.appendChild(layer);
-
-for(const ann of annotations){
-if(ann.subtype!=="Link") continue;
-
-const rect=pdfjsLib.Util.normalizeRect(ann.rect);
-const [x1,y1,x2,y2]=viewport.convertToViewportRectangle(rect);
-
-const link=document.createElement("a");
-link.style.left=Math.min(x1,x2)+"px";
-link.style.top=Math.min(y1,y2)+"px";
-link.style.width=Math.abs(x2-x1)+"px";
-link.style.height=Math.abs(y2-y1)+"px";
-
-if(ann.url){
-link.href=ann.url;
-link.target="_blank";
-}
-
-layer.appendChild(link);
-}
-
-document.getElementById("pageInfo").innerText =
-`Pagina ${currentPage} / ${pdfDoc.numPages}`;
-
-highlight(page,viewport);
-}
-
-function goToPage(p){ currentPage=p; renderPage(p); }
-function nextPage(){ if(currentPage<pdfDoc.numPages){currentPage++;renderPage(currentPage);} }
-function prevPage(){ if(currentPage>1){currentPage--;renderPage(currentPage);} }
-
-pdfjsLib.getDocument(url).promise.then(pdf=>{
-pdfDoc=pdf;
-renderPage(1);
-});
-
-/* SEARCH */
-async function searchText(){
-searchTerm=document.getElementById("searchText").value.toLowerCase();
-results=[];
-
-for(let i=1;i<=pdfDoc.numPages;i++){
-const page=await pdfDoc.getPage(i);
-const text=await page.getTextContent();
-const str=text.items.map(t=>t.str).join(" ").toLowerCase();
-
-if(str.includes(searchTerm))results.push(i);
-}
-
-showResults();
-}
-
-function showResults(){
-const box=document.getElementById("results");
-const sidebar=document.getElementById("sidebar");
-
-box.innerHTML="";
-
-results.forEach(p=>{
-const div=document.createElement("div");
-div.className="result-item";
-div.innerText="Pagina "+p;
-div.onclick=()=>goToPage(p);
-box.appendChild(div);
-});
-
-sidebar.style.display="flex";
-}
-
-function closeSidebar(){
-document.getElementById("sidebar").style.display="none";
-}
-
-/* HIGHLIGHT */
-function highlight(page,viewport){
-if(!searchTerm)return;
-
-page.getTextContent().then(text=>{
-const ctx=document.querySelector("canvas").getContext("2d");
-
-text.items.forEach(item=>{
-if(item.str.toLowerCase().includes(searchTerm)){
-const tx=pdfjsLib.Util.transform(viewport.transform,item.transform);
-ctx.fillStyle="rgba(255,255,0,0.3)";
-ctx.fillRect(tx[4],tx[5]-10,item.width*scale,15);
-}
-});
-});
-}
+  function rejectAction() {
+    window.location.href = "https://www.pavignola.org/";
+  }
 </script>
 
 </body>
 </html>
+
