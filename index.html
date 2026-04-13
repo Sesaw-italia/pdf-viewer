@@ -23,6 +23,17 @@
       align-items: center;
       z-index: 9999;
     }
+    .logo {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 10000; /* sopra overlay */
+    }
+    
+    .logo img {
+      height: 60px; /* regola dimensione */
+      cursor: pointer;
+    }
 
     /* Popup */
     .popup {
@@ -63,7 +74,9 @@
   </style>
 </head>
 <body>
-
+  <a href="https://swesinfoservice.wixsite.com/sesaw" class="logo">
+    <img src="https://static.wixstatic.com/media/aacad1_e25da26e81a14e35a9e86c0f057121e8~mv2.png" alt="Logo">
+  </a>
 <div class="overlay" id="popup">
   <div class="popup">
     <h2>AVVISO IMPORTANTE – ESCLUSIONE DI RESPONSABILITÀ</h2>
